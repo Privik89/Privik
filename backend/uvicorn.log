@@ -1,0 +1,42 @@
+/home/cyberpro/Downloads/Cursor-1.4.5-x86_64.AppImage: ignoring input
+INFO:     Will watch for changes in these directories: ['/home/cyberpro/PriVik/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [292753] using WatchFiles
+INFO:     Started server process [292764]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:55796 - "GET /health HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'app/main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [292764]
+INFO:     Started server process [294534]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'app/core/config.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [294534]
+INFO:     Started server process [294708]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:59984 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59988 - "POST /api/click/redirect HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'app/main.py', 'app/core/config.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [294708]
+INFO:     Started server process [294942]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'app/main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [294942]
+INFO:     Started server process [305116]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
