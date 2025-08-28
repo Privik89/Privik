@@ -17,7 +17,7 @@ class Settings:
     # Database
     database_url: str = os.getenv(
         "DATABASE_URL",
-        "postgresql+psycopg2://postgres:postgres@db:5432/privik",
+        "sqlite:///./privik.db",  # Force SQLite for development
     )
 
     # CORS / API
@@ -35,6 +35,25 @@ class Settings:
     # Feature flags
     enable_clamav: bool = os.getenv("ENABLE_CLAMAV", "false").lower() == "true"
     enable_fake_sandbox: bool = os.getenv("ENABLE_FAKE_SANDBOX", "true").lower() == "true"
+    
+    # AI/ML Services
+    openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
+    virustotal_api_key: str = os.getenv("VIRUSTOTAL_API_KEY", "")
+    
+    # Email Integration
+    gmail_client_id: str = os.getenv("GMAIL_CLIENT_ID", "")
+    gmail_client_secret: str = os.getenv("GMAIL_CLIENT_SECRET", "")
+    o365_client_id: str = os.getenv("O365_CLIENT_ID", "")
+    o365_client_secret: str = os.getenv("O365_CLIENT_SECRET", "")
+    
+    # Security Settings
+    sandbox_timeout: int = int(os.getenv("SANDBOX_TIMEOUT", "30"))
+    max_file_size: str = os.getenv("MAX_FILE_SIZE", "50MB")
+    allowed_file_types: str = os.getenv("ALLOWED_FILE_TYPES", ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.7z")
+    
+    # Proxy Settings
+    proxy_base_url: str = os.getenv("PROXY_BASE_URL", "https://proxy.privik.local")
+    sandbox_base_url: str = os.getenv("SANDBOX_BASE_URL", "https://sandbox.privik.local")
 
 
 @lru_cache(maxsize=1)
