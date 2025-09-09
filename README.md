@@ -44,24 +44,36 @@ Privik is the world's first execution-aware, AI-powered email security platform 
 - Node.js 16+ and npm (for frontend)
 - Docker and Docker Compose (optional, for production)
 
-### Option 1: Full Stack Development (Recommended)
+### **One-Command Setup**
 
-1. **Clone and Setup**
-   ```bash
-   git clone <repository-url>
-   cd Privik
-   ```
+#### **Linux/macOS:**
+```bash
+# Clone and setup
+git clone <repository-url>
+cd Privik
+chmod +x setup_linux.sh
+./setup_linux.sh
 
-2. **Start both backend and frontend**
-   ```bash
-   chmod +x start_privik_full.sh
-   ./start_privik_full.sh
-   ```
+# Start the platform
+./start_privik.sh
+```
 
-3. **Access the platform**
-   - Frontend Dashboard: http://localhost:3000
-   - API Documentation: http://localhost:8000/docs
-   - Health Check: http://localhost:8000/health
+#### **Windows:**
+```cmd
+# Clone and setup
+git clone <repository-url>
+cd Privik
+setup_windows.bat
+
+# Start the platform
+start_privik_windows.bat
+```
+
+### **Access Points**
+- **Frontend Dashboard**: http://localhost:3000
+- **Backend API**: http://localhost:8000
+- **API Documentation**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/health
 
 ### Option 2: Manual Setup
 
@@ -309,9 +321,27 @@ kubectl get pods -l app=privik
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## 📚 Documentation
+
+### **User Guides**
+- **[User Guide](USER_GUIDE.md)** - Comprehensive setup and usage instructions
+- **[Troubleshooting Guide](TROUBLESHOOTING.md)** - Common issues and solutions
+- **[Cross-Platform Setup](CROSS_PLATFORM_SETUP.md)** - Platform-specific installation guides
+- **[Deployment Guide](DEPLOYMENT_GUIDE.md)** - Production deployment instructions
+
+### **Technical Documentation**
+- **[Changelog](CHANGELOG.md)** - Version history and updates
+- **[API Documentation](http://localhost:8000/docs)** - Interactive API documentation
+- **[Implementation Guide](IMPLEMENTATION_GUIDE.md)** - Technical implementation details
+
+### **Quick Reference**
+- **Setup Scripts**: `setup_linux.sh`, `setup_windows.bat`
+- **Start Scripts**: `start_privik.sh`, `start_privik_windows.bat`
+- **Test Scripts**: `test_system.py`, `test_system_windows.bat`
+
 ## 🆘 Support
 
-- **Documentation**: [docs.privik.com](https://docs.privik.com)
+- **Documentation**: Check the guides above first
 - **Issues**: [GitHub Issues](https://github.com/privik/privik/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/privik/privik/discussions)
 - **Email**: support@privik.com

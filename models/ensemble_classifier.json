@@ -1,0 +1,14 @@
+{
+  "type": "rule_based",
+  "rules": {
+    "phishing": 0.7,
+    "bec": 0.6,
+    "malicious_link": 0.8,
+    "risky_behavior": 0.5
+  },
+  "weights": {
+    "email_classifier": 0.4,
+    "link_classifier": 0.3,
+    "behavior_classifier": 0.3
+  }
+}

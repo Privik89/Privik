@@ -200,7 +200,12 @@ async def _perform_behavioral_analysis(file_path: str) -> SandboxVerdict:
     # For MVP, we'll simulate based on file type
     file_type = _detect_file_type(file_path)
     if file_type in [".exe", ".bat", ".cmd"]:
-        simulated_behaviors["processes"] = ["cmd.exe", "powershell.exe"]
+        # Cross-platform process simulation
+        import platform
+        if platform.system() == "Windows":
+            simulated_behaviors["processes"] = ["cmd.exe", "powershell.exe", "python.exe"]
+        else:
+            simulated_behaviors["processes"] = ["bash", "sh", "python"]
         simulated_behaviors["api_calls"] = ["CreateProcess", "WriteFile"]
     
     behavioral_score = 0.1  # Low score for MVP simulation
