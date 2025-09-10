@@ -282,7 +282,7 @@ async def get_hourly_stats(
     hourly_emails = db.query(
         func.date_trunc('hour', Email.created_at).label('hour'),
         func.count(Email.id).label('total'),
-        func.sum(func.case([(Email.is_suspicious == True, 1)], else_=0)).label('suspicious')
+        func.sum(case((Email.is_suspicious == True, 1), else_=0)).label('suspicious')
     ).filter(
         Email.created_at >= start_date
     ).group_by(
@@ -295,7 +295,7 @@ async def get_hourly_stats(
     hourly_clicks = db.query(
         func.date_trunc('hour', ClickEvent.created_at).label('hour'),
         func.count(ClickEvent.id).label('total'),
-        func.sum(func.case([(ClickEvent.is_suspicious == True, 1)], else_=0)).label('suspicious')
+        func.sum(case((ClickEvent.is_suspicious == True, 1), else_=0)).label('suspicious')
     ).filter(
         ClickEvent.created_at >= start_date
     ).group_by(
