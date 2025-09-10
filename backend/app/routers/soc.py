@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import func, desc
+from sqlalchemy import func, case, desc
 from typing import List, Optional
 from datetime import datetime, timedelta
 from pydantic import BaseModel
@@ -56,22 +56,22 @@ async def get_dashboard_summary(
     # Email statistics
     email_stats = db.query(
         func.count(Email.id).label('total'),
-        func.sum(func.case([(Email.is_suspicious == True, 1)], else_=0)).label('suspicious'),
-        func.sum(func.case([(Email.ai_verdict == 'malicious', 1)], else_=0)).label('malicious')
+        func.sum(case((Email.is_suspicious == True, 1), else_=0)).label('suspicious'),
+        func.sum(case((Email.ai_verdict == 'malicious', 1), else_=0)).label('malicious')
     ).filter(Email.created_at >= start_date).first()
     
     # Click statistics
     click_stats = db.query(
         func.count(ClickEvent.id).label('total'),
-        func.sum(func.case([(ClickEvent.is_suspicious == True, 1)], else_=0)).label('suspicious'),
-        func.sum(func.case([(ClickEvent.ai_verdict == 'malicious', 1)], else_=0)).label('blocked')
+        func.sum(case((ClickEvent.is_suspicious == True, 1), else_=0)).label('suspicious'),
+        func.sum(case((ClickEvent.ai_verdict == 'malicious', 1), else_=0)).label('blocked')
     ).filter(ClickEvent.created_at >= start_date).first()
     
     # Attachment statistics
     attachment_stats = db.query(
         func.count(EmailAttachment.id).label('total'),
-        func.sum(func.case([(EmailAttachment.threat_score > 0.5, 1)], else_=0)).label('suspicious'),
-        func.sum(func.case([(EmailAttachment.sandbox_verdict == 'malicious', 1)], else_=0)).label('malicious')
+        func.sum(case((EmailAttachment.threat_score > 0.5, 1), else_=0)).label('suspicious'),
+        func.sum(case((EmailAttachment.sandbox_verdict == 'malicious', 1), else_=0)).label('malicious')
     ).filter(EmailAttachment.created_at >= start_date).first()
     
     return ThreatSummary(
