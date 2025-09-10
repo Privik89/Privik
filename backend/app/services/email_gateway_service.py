@@ -13,6 +13,11 @@ from enum import Enum
 
 from .email_integrations import EmailIntegrationManager
 from .ai_threat_detection import AIThreatDetection
+from .email_authentication import email_auth_service
+from .reputation_service import reputation_service
+from .link_rewriter import get_link_rewriter
+from .email_header_analyzer import email_header_analyzer
+from .attachment_validator import get_attachment_validator
 # from .sandbox import SandboxService  # TODO: Implement SandboxService class
 from ..models.email import Email, EmailAttachment
 from ..models.click import ClickEvent
@@ -51,6 +56,8 @@ class EmailGatewayService:
         self.config = config
         self.email_integrations = None
         self.ai_threat_detection = None
+        self.link_rewriter = None
+        self.attachment_validator = None
         # self.sandbox_service = None  # TODO: Implement SandboxService
         self.processing_queue = asyncio.Queue()
         self.is_running = False
@@ -93,6 +100,14 @@ class EmailGatewayService:
             ai_config = self.config.get('ai_threat_detection', {})
             self.ai_threat_detection = AIThreatDetection(ai_config)
             await self.ai_threat_detection.initialize()
+            
+            # Initialize link rewriter
+            link_config = self.config.get('link_rewriter', {})
+            self.link_rewriter = get_link_rewriter(link_config)
+            
+            # Initialize attachment validator
+            attachment_config = self.config.get('attachment_validator', {})
+            self.attachment_validator = get_attachment_validator(attachment_config)
             
             # Initialize sandbox service (TODO: Implement SandboxService)
             # sandbox_config = self.config.get('sandbox', {})
@@ -152,7 +167,7 @@ class EmailGatewayService:
             logger.error(f"Error stopping Email Gateway Service: {e}")
     
     async def process_email(self, email_data: Dict[str, Any]) -> EmailProcessingResult:
-        """Process a single email through the threat detection pipeline"""
+        """Process a single email through the comprehensive threat detection pipeline"""
         start_time = datetime.utcnow()
         
         try:
@@ -161,33 +176,53 @@ class EmailGatewayService:
             # Step 1: Store email in database
             email_record = await self._store_email(email_data)
             
-            # Step 2: AI threat detection
+            # Step 2: Email authentication validation (DMARC, DKIM, SPF)
+            auth_result = await self._validate_email_authentication(email_data)
+            
+            # Step 3: Reputation checking
+            reputation_result = await self._check_reputation(email_data)
+            
+            # Step 4: Header analysis
+            header_result = await self._analyze_headers(email_data)
+            
+            # Step 5: Link rewriting and analysis
+            link_result = await self._rewrite_links(email_data, str(email_record.id))
+            
+            # Step 6: Attachment validation
+            attachment_result = await self._validate_attachments(email_data)
+            
+            # Step 7: AI threat detection
             ai_result = await self.ai_threat_detection.predict_email_threat(email_data)
             
-            # Step 3: Apply zero-trust policies
-            action = self._apply_zero_trust_policies(email_data, ai_result)
+            # Step 8: Calculate combined threat score
+            combined_threat_score = self._calculate_combined_threat_score(
+                auth_result, reputation_result, header_result, attachment_result, ai_result
+            )
             
-            # Step 4: Sandbox analysis if needed
+            # Step 9: Apply zero-trust policies
+            action = self._apply_zero_trust_policies(email_data, combined_threat_score)
+            
+            # Step 10: Sandbox analysis if needed
             sandbox_result = None
             if action == EmailAction.SANDBOX and email_data.get('attachments'):
                 sandbox_result = await self._sandbox_attachments(email_data['attachments'])
             
-            # Step 5: Update email record with results
-            await self._update_email_record(email_record, ai_result, action, sandbox_result)
+            # Step 11: Update email record with results
+            await self._update_email_record(email_record, combined_threat_score, action, sandbox_result)
             
-            # Step 6: Take action based on result
-            await self._execute_action(email_record, action, ai_result, sandbox_result)
+            # Step 12: Take action based on result
+            await self._execute_action(email_record, action, combined_threat_score, sandbox_result)
             
             # Calculate processing time
             processing_time = (datetime.utcnow() - start_time).total_seconds()
             
             # Update statistics
-            self._update_statistics(processing_time, action, ai_result.threat_score)
+            self._update_statistics(processing_time, action, combined_threat_score)
             
             result = EmailProcessingResult(
                 email_id=str(email_record.id),
                 action=action,
-                threat_score=ai_result.threat_score,
+                threat_score=combined_threat_score,
                 threat_type=ai_result.threat_type,
                 confidence=ai_result.confidence,
                 indicators=ai_result.indicators,
@@ -197,11 +232,14 @@ class EmailGatewayService:
                     'threat_type': ai_result.threat_type,
                     'confidence': ai_result.confidence,
                     'indicators': ai_result.indicators,
-                    'model_version': ai_result.model_version
+                    'model_version': ai_result.model_version,
+                    'authentication_score': auth_result.authentication_score if auth_result else 0.0,
+                    'reputation_score': reputation_result.get('score', 0.0) if reputation_result else 0.0,
+                    'header_risk': header_result.risk_score if header_result else 0.0
                 }
             )
             
-            logger.info(f"Email processed: {action.value} (threat_score: {ai_result.threat_score:.3f})")
+            logger.info(f"Email processed: {action.value} (threat_score: {combined_threat_score:.3f})")
             return result
             
         except Exception as e:
@@ -254,7 +292,154 @@ class EmailGatewayService:
             logger.error(f"Error storing email: {e}")
             raise
     
-    def _apply_zero_trust_policies(self, email_data: Dict[str, Any], ai_result) -> EmailAction:
+    async def _validate_email_authentication(self, email_data: Dict[str, Any]):
+        """Validate email authentication (DMARC, DKIM, SPF)"""
+        try:
+            # Mock headers for authentication check
+            headers = {
+                'From': email_data.get('sender', ''),
+                'Return-Path': email_data.get('sender', ''),
+                'Received': f'from {email_data.get("source_ip", "unknown")} by privik-gateway'
+            }
+            
+            return await email_auth_service.validate_email_authentication(
+                headers, 
+                email_data.get('source_ip', '127.0.0.1'),
+                email_data.get('sender_domain', 'unknown.com')
+            )
+        except Exception as e:
+            logger.error(f"Error validating email authentication: {e}")
+            return None
+    
+    async def _check_reputation(self, email_data: Dict[str, Any]):
+        """Check domain and IP reputation"""
+        try:
+            sender_domain = email_data.get('sender_domain', 'unknown.com')
+            source_ip = email_data.get('source_ip', '127.0.0.1')
+            
+            # Run reputation checks in parallel
+            domain_task = reputation_service.check_domain_reputation(sender_domain)
+            ip_task = reputation_service.check_ip_reputation(source_ip)
+            
+            domain_result, ip_result = await asyncio.gather(domain_task, ip_task, return_exceptions=True)
+            
+            return {
+                'domain_reputation': domain_result if not isinstance(domain_result, Exception) else None,
+                'ip_reputation': ip_result if not isinstance(ip_result, Exception) else None,
+                'score': min(
+                    domain_result.score if not isinstance(domain_result, Exception) else 0.5,
+                    ip_result.score if not isinstance(ip_result, Exception) else 0.5
+                )
+            }
+        except Exception as e:
+            logger.error(f"Error checking reputation: {e}")
+            return {'score': 0.5}
+    
+    async def _analyze_headers(self, email_data: Dict[str, Any]):
+        """Analyze email headers"""
+        try:
+            headers = email_data.get('headers', {})
+            return await email_header_analyzer.analyze_headers(headers)
+        except Exception as e:
+            logger.error(f"Error analyzing headers: {e}")
+            return None
+    
+    async def _rewrite_links(self, email_data: Dict[str, Any], email_id: str):
+        """Rewrite links in email content"""
+        try:
+            if not self.link_rewriter:
+                return None
+            
+            # Combine text and HTML content
+            content = email_data.get('body_html', '') or email_data.get('body_text', '')
+            if not content:
+                return None
+            
+            return await self.link_rewriter.rewrite_email_links(content, email_id)
+        except Exception as e:
+            logger.error(f"Error rewriting links: {e}")
+            return None
+    
+    async def _validate_attachments(self, email_data: Dict[str, Any]):
+        """Validate email attachments"""
+        try:
+            if not self.attachment_validator or not email_data.get('attachments'):
+                return []
+            
+            validation_results = []
+            for attachment in email_data['attachments']:
+                filename = attachment.get('filename', 'unknown')
+                content = attachment.get('content', b'')
+                mime_type = attachment.get('mime_type')
+                
+                result = await self.attachment_validator.validate_attachment(
+                    filename, content, mime_type
+                )
+                validation_results.append(result)
+            
+            return validation_results
+        except Exception as e:
+            logger.error(f"Error validating attachments: {e}")
+            return []
+    
+    def _calculate_combined_threat_score(self, auth_result, reputation_result, header_result, attachment_result, ai_result):
+        """Calculate combined threat score from all analysis results"""
+        try:
+            scores = []
+            weights = []
+            
+            # Authentication score (weight: 0.2)
+            if auth_result:
+                scores.append(1.0 - auth_result.authentication_score)  # Convert to threat score
+                weights.append(0.2)
+            
+            # Reputation score (weight: 0.2)
+            if reputation_result:
+                scores.append(1.0 - reputation_result.get('score', 0.5))
+                weights.append(0.2)
+            
+            # Header analysis score (weight: 0.2)
+            if header_result:
+                scores.append(header_result.risk_score)
+                weights.append(0.2)
+            
+            # Attachment validation score (weight: 0.2)
+            if attachment_result:
+                attachment_scores = []
+                for result in attachment_result:
+                    if result.risk_level.value == 'safe':
+                        attachment_scores.append(0.0)
+                    elif result.risk_level.value == 'low':
+                        attachment_scores.append(0.2)
+                    elif result.risk_level.value == 'medium':
+                        attachment_scores.append(0.5)
+                    elif result.risk_level.value == 'high':
+                        attachment_scores.append(0.8)
+                    else:  # critical
+                        attachment_scores.append(1.0)
+                
+                if attachment_scores:
+                    scores.append(max(attachment_scores))  # Use highest threat score
+                    weights.append(0.2)
+            
+            # AI threat detection score (weight: 0.2)
+            if ai_result:
+                scores.append(ai_result.threat_score)
+                weights.append(0.2)
+            
+            # Calculate weighted average
+            if scores and weights:
+                total_weight = sum(weights)
+                weighted_score = sum(score * weight for score, weight in zip(scores, weights)) / total_weight
+                return min(1.0, max(0.0, weighted_score))
+            else:
+                return 0.5  # Default neutral score
+            
+        except Exception as e:
+            logger.error(f"Error calculating combined threat score: {e}")
+            return 0.5
+    
+    def _apply_zero_trust_policies(self, email_data: Dict[str, Any], threat_score: float) -> EmailAction:
         """Apply zero-trust policies to determine email action"""
         try:
             # Check whitelist/blacklist domains
@@ -267,7 +452,7 @@ class EmailGatewayService:
                 return EmailAction.ALLOW
             
             # Check threat score thresholds
-            threat_score = ai_result.threat_score
+            threat_score = threat_score
             
             if threat_score >= self.zero_trust_policies['threat_thresholds']['block']:
                 return EmailAction.BLOCK
