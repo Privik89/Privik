@@ -525,6 +525,68 @@ class AIThreatDetection:
                 model_version='error',
                 prediction_time=datetime.utcnow()
             )
+
+    async def predict_email_intent(self, email_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Lightweight intent classification for Phase 1 labeling.
+
+        Returns:
+            { 'intent': str, 'confidence': float, 'indicators': List[str] }
+        """
+        try:
+            subject = (email_data.get('subject') or '').lower()
+            body = (email_data.get('body_text') or '')
+            body_lower = body.lower()
+
+            indicators = []
+            intent = 'safe'
+            confidence = 0.5
+
+            # Invoice fraud heuristics
+            invoice_terms = [
+                'invoice', 'payment due', 'bank details', 'account details',
+                'wire transfer', 'swift', 'iban', 'remittance', 'payment instructions'
+            ]
+            if any(term in body_lower for term in invoice_terms):
+                intent = 'invoice_fraud'
+                indicators.append('invoice_keywords')
+                if 'urgent' in subject or 'urgent' in body_lower:
+                    indicators.append('urgent_language')
+                    confidence = 0.75
+                else:
+                    confidence = 0.65
+
+            # BEC indicators
+            bec_terms = ['wire transfer', 'bank transfer', 'gift cards', 'update vendor']
+            if any(term in body_lower for term in bec_terms):
+                if intent != 'invoice_fraud':
+                    intent = 'bec'
+                    confidence = max(confidence, 0.7)
+                indicators.append('bec_indicators')
+
+            # Phishing indicators
+            phishing_terms = ['verify account', 'login now', 'reset password', 'confirm your identity']
+            if any(term in body_lower for term in phishing_terms):
+                if intent not in ['invoice_fraud', 'bec']:
+                    intent = 'phishing'
+                    confidence = max(confidence, 0.7)
+                indicators.append('phishing_language')
+
+            # Spam indicators (simplified)
+            spam_terms = ['lottery', 'prize', 'free money', 'winner', 'work from home']
+            if any(term in body_lower for term in spam_terms):
+                if intent == 'safe':
+                    intent = 'spam'
+                    confidence = max(confidence, 0.7)
+                indicators.append('spam_language')
+
+            return {
+                'intent': intent,
+                'confidence': min(0.95, confidence),
+                'indicators': indicators,
+            }
+        except Exception as e:
+            logger.error('Error predicting email intent', error=str(e))
+            return {'intent': 'unknown', 'confidence': 0.0, 'indicators': ['intent_error']}
     
     async def predict_link_threat(self, url: str, context: Dict[str, Any]) -> ThreatPrediction:
         """Predict link threat using AI models"""

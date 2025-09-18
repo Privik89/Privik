@@ -13,6 +13,7 @@ const navigation = [
   { name: 'Dashboard', href: '/', icon: HomeIcon },
   { name: 'Email Analysis', href: '/emails', icon: EnvelopeIcon },
   { name: 'Threat Intelligence', href: '/threats', icon: ExclamationTriangleIcon },
+  { name: 'Incidents', href: '/incidents', icon: ExclamationTriangleIcon },
   { name: 'User Risk', href: '/users', icon: UsersIcon },
   { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
 ];

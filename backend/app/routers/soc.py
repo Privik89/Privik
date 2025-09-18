@@ -42,6 +42,84 @@ class ThreatTimeline(BaseModel):
     threat_score: float
     verdict: str
     details: dict
+class IncidentItem(BaseModel):
+    id: int
+    created_at: datetime
+    type: str
+    verdict: str | None
+    threat_score: float | None
+    email_subject: str | None
+    attachment_filename: str | None
+    artifact_report_key: str | None
+
+
+@router.get("/incidents", response_model=List[IncidentItem])
+async def list_incidents(
+    limit: int = Query(50, description="Number of incidents to return"),
+    db: Session = Depends(get_db)
+):
+    """List recent sandbox analyses as incidents."""
+    analyses = db.query(SandboxAnalysis).order_by(SandboxAnalysis.created_at.desc()).limit(limit).all()
+    results: List[IncidentItem] = []
+    for a in analyses:
+        # Join attachment and email lazily
+        att = db.query(EmailAttachment).filter(EmailAttachment.id == a.attachment_id).first() if a.attachment_id else None
+        eml = db.query(Email).filter(Email.id == att.email_id).first() if att else None
+        results.append(IncidentItem(
+            id=a.id,
+            created_at=a.created_at,
+            type="attachment",
+            verdict=a.verdict,
+            threat_score=a.threat_score,
+            email_subject=eml.subject if eml else None,
+            attachment_filename=att.filename if att else None,
+            artifact_report_key=None  # placeholder until MinIO integration
+        ))
+    return results
+
+
+@router.get("/incidents/{incident_id}")
+async def get_incident_detail(incident_id: int, db: Session = Depends(get_db)):
+    """Get detailed incident info including related email and attachment."""
+    a = db.query(SandboxAnalysis).filter(SandboxAnalysis.id == incident_id).first()
+    if not a:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    att = db.query(EmailAttachment).filter(EmailAttachment.id == a.attachment_id).first() if a.attachment_id else None
+    eml = db.query(Email).filter(Email.id == att.email_id).first() if att else None
+    return {
+        "id": a.id,
+        "created_at": a.created_at,
+        "verdict": a.verdict,
+        "confidence": a.confidence,
+        "threat_score": a.threat_score,
+        "file": {
+            "filename": att.filename if att else None,
+            "size": att.file_size if att else None,
+            "content_type": att.content_type if att else None,
+        },
+        "email": {
+            "subject": eml.subject if eml else None,
+            "sender": eml.sender if eml else None,
+            "recipients": eml.recipients if eml else None,
+            "message_id": eml.message_id if eml else None,
+        },
+        "behavior": {
+            "process_created": a.process_created,
+            "files_created": a.files_created,
+            "registry_changes": a.registry_changes,
+            "network_connections": a.network_connections,
+            "api_calls": a.api_calls,
+        },
+        "ai": {
+            "verdict": a.ai_verdict,
+            "confidence": a.ai_confidence,
+            "details": a.ai_details,
+        },
+        "artifacts": {
+            "report_key": a.artifacts_report_key,
+            "screenshots": a.artifacts_screenshots or []
+        }
+    }
 
 
 @router.get("/dashboard", response_model=ThreatSummary)

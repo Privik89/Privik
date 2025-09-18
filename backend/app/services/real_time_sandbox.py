@@ -8,10 +8,15 @@ import aiohttp
 import subprocess
 import tempfile
 import os
+import json
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 import structlog
 from dataclasses import dataclass
+from .object_storage import ObjectStorage
+from ..database import SessionLocal
+from ..models.sandbox import SandboxAnalysis
+from ..models.email import EmailAttachment
 
 logger = structlog.get_logger()
 
@@ -36,6 +41,11 @@ class RealTimeSandbox:
         self.max_concurrent = config.get('max_concurrent_sandboxes', 10)
         self.timeout = config.get('sandbox_timeout', 300)  # 5 minutes
         self.browser_pool = []
+        # CAPE settings
+        self.cape_enabled = config.get('cape_enabled', False)
+        self.cape_base_url = config.get('cape_base_url')
+        self.cape_api_token = config.get('cape_api_token')
+        self.storage = ObjectStorage()
         
     async def initialize(self):
         """Initialize sandbox environment"""
@@ -114,7 +124,10 @@ class RealTimeSandbox:
                 execution_logs = []
                 network_activity = []
                 
-                # Monitor network requests
+                # Monitor network requests and console logs
+                console_logs = []
+                har_data = []
+                
                 async def handle_request(request):
                     network_activity.append({
                         'url': request.url,
@@ -131,8 +144,16 @@ class RealTimeSandbox:
                         'timestamp': datetime.utcnow().isoformat()
                     })
                 
+                async def handle_console(msg):
+                    console_logs.append({
+                        'type': msg.type,
+                        'text': msg.text,
+                        'timestamp': datetime.utcnow().isoformat()
+                    })
+                
                 page.on('request', handle_request)
                 page.on('response', handle_response)
+                page.on('console', handle_console)
                 
                 # Navigate to URL with timeout
                 try:
@@ -141,9 +162,23 @@ class RealTimeSandbox:
                     # Wait for page to load
                     await page.wait_for_load_state('networkidle', timeout=10000)
                     
-                    # Capture page content
+                    # Capture page content and artifacts
                     page_content = await page.content()
                     page_title = await page.title()
+                    
+                    # Capture DOM snapshot
+                    dom_snapshot = await page.evaluate("document.documentElement.outerHTML")
+                    
+                    # Generate HAR data
+                    try:
+                        har_data = await page.evaluate("""
+                            () => {
+                                const entries = performance.getEntriesByType('navigation');
+                                return entries.length > 0 ? entries[0] : null;
+                            }
+                        """)
+                    except:
+                        har_data = None
                     
                     # Check for suspicious elements
                     suspicious_elements = await self._detect_suspicious_elements(page)
@@ -160,10 +195,41 @@ class RealTimeSandbox:
                     verdict = self._determine_verdict(threat_score)
                     confidence = min(threat_score * 1.2, 1.0)
                     
+                    # Store artifacts in object storage
+                    artifacts = {}
+                    if console_logs:
+                        console_key = f"link_analysis/{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_console.json"
+                        await self.object_storage.upload_file(
+                            console_key, 
+                            json.dumps(console_logs, indent=2).encode()
+                        )
+                        artifacts['console_logs'] = console_key
+                    
+                    if dom_snapshot:
+                        dom_key = f"link_analysis/{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_dom.html"
+                        await self.object_storage.upload_file(
+                            dom_key, 
+                            dom_snapshot.encode('utf-8')
+                        )
+                        artifacts['dom_snapshot'] = dom_key
+                    
+                    if har_data:
+                        har_key = f"link_analysis/{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_har.json"
+                        await self.object_storage.upload_file(
+                            har_key, 
+                            json.dumps(har_data, indent=2).encode()
+                        )
+                        artifacts['har_data'] = har_key
+                    
                     return SandboxResult(
                         verdict=verdict,
                         confidence=confidence,
-                        execution_logs=execution_logs,
+                        execution_logs=execution_logs + [{
+                            'type': 'link_analysis',
+                            'url': url,
+                            'title': page_title,
+                            'artifacts': artifacts
+                        }],
                         network_activity=network_activity,
                         file_operations=[],
                         registry_changes=[],
@@ -204,6 +270,13 @@ class RealTimeSandbox:
         """Analyze attachment in real-time sandbox"""
         try:
             logger.info("Starting real-time attachment analysis", file_path=file_path)
+            
+            # Submit to CAPE if enabled
+            if self.cape_enabled and self.cape_base_url:
+                try:
+                    return await self._analyze_via_cape(file_path)
+                except Exception as e:
+                    logger.error("CAPE analysis failed, falling back", error=str(e))
             
             # Get available sandbox
             sandbox = await self._get_available_sandbox()
@@ -280,6 +353,60 @@ class RealTimeSandbox:
             registry_changes=[],
             threat_indicators=threat_indicators
         )
+
+    async def _analyze_via_cape(self, file_path: str) -> SandboxResult:
+        """Submit file to CAPE and poll for result."""
+        try:
+            import aiohttp
+            submit_url = f"{self.cape_base_url}/tasks/create/file"
+            headers = {}
+            params = {"token": self.cape_api_token} if self.cape_api_token else {}
+            data = aiohttp.FormData()
+            data.add_field('file', open(file_path, 'rb'), filename=os.path.basename(file_path))
+            async with aiohttp.ClientSession() as session:
+                async with session.post(submit_url, data=data, params=params) as resp:
+                    if resp.status != 200:
+                        raise Exception(f"CAPE submit failed: {resp.status}")
+                    submit_res = await resp.json()
+                    task_id = submit_res.get('task_id') or submit_res.get('task_ids', [None])[0]
+                    if not task_id:
+                        raise Exception("CAPE task id missing")
+            # Poll for report
+            report_url = f"{self.cape_base_url}/tasks/report/{task_id}"
+            for _ in range(30):  # ~30 polls
+                await asyncio.sleep(5)
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(report_url, params=params) as resp:
+                        if resp.status == 200:
+                            report = await resp.json()
+                            # Basic mapping & persistence
+                            score = float(report.get('info', {}).get('score', 0.0))
+                            verdict = 'malicious' if score >= 8 else 'suspicious' if score >= 4 else 'safe'
+                            indicators = list(report.get('signatures', {}).keys()) if isinstance(report.get('signatures'), dict) else []
+                            # Upload report JSON
+                            report_key = f"reports/cape/{task_id}.json"
+                            try:
+                                self.storage.upload_json(report_key, report)
+                            except Exception:
+                                report_key = None
+                            # Attempt to capture screenshots if present in report (placeholder)
+                            screenshots_keys = []
+                            # Return result
+                            return SandboxResult(
+                                verdict=verdict,
+                                confidence=min(score / 10.0, 1.0),
+                                execution_logs=[{'task_id': task_id, 'report_key': report_key, 'screenshots': screenshots_keys}],
+                                network_activity=report.get('network', {}).get('hosts', []),
+                                file_operations=[],
+                                registry_changes=[],
+                                threat_indicators=indicators
+                            )
+                        elif resp.status == 404:
+                            continue
+            raise Exception("CAPE report timeout")
+        except Exception as e:
+            logger.error("CAPE client error", error=str(e))
+            raise
     
     async def _analyze_document(self, file_path: str, sandbox: Dict[str, Any]) -> SandboxResult:
         """Analyze document file"""

@@ -26,6 +26,9 @@ class AgentConfig:
     server_url: str = "http://localhost:8000"
     server_api_key: Optional[str] = None
     server_cert_path: Optional[str] = None
+    # HMAC auth
+    hmac_api_key_id: Optional[str] = None
+    hmac_api_secret: Optional[str] = None
     
     # Security settings
     encryption_enabled: bool = True
@@ -161,6 +164,8 @@ class ConfigManager:
             agent_name=f"privik-agent-{platform.node()}",
             server_url=os.getenv("PRIVIK_SERVER_URL", "http://localhost:8000"),
             server_api_key=os.getenv("PRIVIK_API_KEY"),
+            hmac_api_key_id=os.getenv("PRIVIK_HMAC_API_KEY_ID", "privik-agent"),
+            hmac_api_secret=os.getenv("PRIVIK_HMAC_API_SECRET"),
             jwt_secret=os.getenv("PRIVIK_JWT_SECRET"),
             log_level=os.getenv("PRIVIK_LOG_LEVEL", "INFO"),
         )
@@ -178,6 +183,8 @@ class ConfigManager:
                 'server_url': self.config.server_url,
                 'server_api_key': self.config.server_api_key,
                 'server_cert_path': self.config.server_cert_path,
+                'hmac_api_key_id': self.config.hmac_api_key_id,
+                'hmac_api_secret': self.config.hmac_api_secret,
                 'encryption_enabled': self.config.encryption_enabled,
                 'certificate_verification': self.config.certificate_verification,
                 'jwt_secret': self.config.jwt_secret,

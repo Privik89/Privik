@@ -5,6 +5,8 @@ import structlog
 from .core.config import get_settings
 from .api import api_router
 from .database import create_tables
+from .services.sandbox_poller import run_cape_poller
+from .services.threat_feed_manager import ThreatFeedManager
 
 # Configure structured logging
 structlog.configure(
@@ -52,6 +54,21 @@ async def startup_event():
         # Create database tables
         create_tables()
         logger.info("Database tables created successfully")
+        # Start CAPE poller if enabled
+        settings_local = get_settings()
+        if settings_local.cape_enabled:
+            import asyncio
+            asyncio.create_task(
+                run_cape_poller(
+                    settings_local.cape_base_url,
+                    settings_local.cape_api_token,
+                    interval_seconds=30,
+                )
+            )
+        
+        # Start threat feed manager
+        threat_manager = ThreatFeedManager()
+        asyncio.create_task(threat_manager.start_feed_monitoring())
     except Exception as e:
         logger.error("Failed to create database tables", error=str(e))
         raise

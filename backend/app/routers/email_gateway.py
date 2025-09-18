@@ -11,6 +11,7 @@ import structlog
 from ..services.email_gateway_service import get_email_gateway_service, EmailGatewayService, EmailAction
 from ..database import get_db
 from sqlalchemy.orm import Session
+from ..security.hmac_auth import verify_request
 
 logger = structlog.get_logger()
 router = APIRouter(prefix="/api/email-gateway", tags=["email-gateway"])
@@ -59,7 +60,7 @@ class EmailGatewayStats(BaseModel):
     processing_time_avg: float
 
 
-@router.post("/process", response_model=EmailProcessingResponse)
+@router.post("/process", response_model=EmailProcessingResponse, dependencies=[Depends(verify_request)])
 async def process_email(
     email_request: EmailProcessingRequest,
     background_tasks: BackgroundTasks,
@@ -99,7 +100,7 @@ async def process_email(
         raise HTTPException(status_code=500, detail=f"Error processing email: {str(e)}")
 
 
-@router.post("/process-async")
+@router.post("/process-async", dependencies=[Depends(verify_request)])
 async def process_email_async(
     email_request: EmailProcessingRequest,
     background_tasks: BackgroundTasks,
@@ -129,7 +130,7 @@ async def process_email_async(
         raise HTTPException(status_code=500, detail=f"Error queuing email: {str(e)}")
 
 
-@router.get("/statistics", response_model=EmailGatewayStats)
+@router.get("/statistics", response_model=EmailGatewayStats, dependencies=[Depends(verify_request)])
 async def get_statistics(
     gateway_service: EmailGatewayService = Depends(get_email_gateway_service)
 ):
@@ -143,7 +144,7 @@ async def get_statistics(
         raise HTTPException(status_code=500, detail=f"Error getting statistics: {str(e)}")
 
 
-@router.post("/policies/update")
+@router.post("/policies/update", dependencies=[Depends(verify_request)])
 async def update_zero_trust_policies(
     policy_update: ZeroTrustPolicyUpdate,
     gateway_service: EmailGatewayService = Depends(get_email_gateway_service)
@@ -162,7 +163,7 @@ async def update_zero_trust_policies(
         raise HTTPException(status_code=500, detail=f"Error updating policies: {str(e)}")
 
 
-@router.get("/policies")
+@router.get("/policies", dependencies=[Depends(verify_request)])
 async def get_zero_trust_policies(
     gateway_service: EmailGatewayService = Depends(get_email_gateway_service)
 ):
@@ -175,7 +176,7 @@ async def get_zero_trust_policies(
         raise HTTPException(status_code=500, detail=f"Error getting policies: {str(e)}")
 
 
-@router.post("/start")
+@router.post("/start", dependencies=[Depends(verify_request)])
 async def start_email_gateway(
     gateway_service: EmailGatewayService = Depends(get_email_gateway_service)
 ):
@@ -194,7 +195,7 @@ async def start_email_gateway(
         raise HTTPException(status_code=500, detail=f"Error starting email gateway: {str(e)}")
 
 
-@router.post("/stop")
+@router.post("/stop", dependencies=[Depends(verify_request)])
 async def stop_email_gateway(
     gateway_service: EmailGatewayService = Depends(get_email_gateway_service)
 ):
@@ -211,7 +212,7 @@ async def stop_email_gateway(
         raise HTTPException(status_code=500, detail=f"Error stopping email gateway: {str(e)}")
 
 
-@router.get("/status")
+@router.get("/status", dependencies=[Depends(verify_request)])
 async def get_gateway_status(
     gateway_service: EmailGatewayService = Depends(get_email_gateway_service)
 ):
@@ -229,7 +230,7 @@ async def get_gateway_status(
         raise HTTPException(status_code=500, detail=f"Error getting gateway status: {str(e)}")
 
 
-@router.post("/test-email")
+@router.post("/test-email", dependencies=[Depends(verify_request)])
 async def test_email_processing(
     gateway_service: EmailGatewayService = Depends(get_email_gateway_service)
 ):

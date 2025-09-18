@@ -1,4 +1,15 @@
 import React, { useState } from 'react';
+import SandboxAdminCard from '../components/SandboxAdminCard';
+import PoliciesAdminCard from '../components/PoliciesAdminCard';
+import IntegrationsAdminCard from '../components/IntegrationsAdminCard';
+import DomainListsCard from '../components/DomainListsCard';
+import DomainReputationCard from '../components/DomainReputationCard';
+import BulkDomainManager from '../components/BulkDomainManager';
+import ThreatFeedsCard from '../components/ThreatFeedsCard';
+import QuarantineManager from '../components/QuarantineManager';
+import IncidentCorrelation from '../components/IncidentCorrelation';
+import PerformanceMonitor from '../components/PerformanceMonitor';
+import AIMLDashboard from '../components/AIMLDashboard';
 import { Cog6ToothIcon, ShieldCheckIcon, BellIcon, UserIcon } from '@heroicons/react/24/outline';
 
 function Settings() {
@@ -104,6 +115,39 @@ function Settings() {
                       <option>1 hour</option>
                       <option>4 hours</option>
                     </select>
+                  </div>
+                  <div>
+                    <SandboxAdminCard />
+                  </div>
+                  <div>
+                    <PoliciesAdminCard />
+                  </div>
+                  <div>
+                    <IntegrationsAdminCard />
+                  </div>
+                  <div>
+                    <DomainListsCard />
+                  </div>
+                  <div>
+                    <DomainReputationCard />
+                  </div>
+                  <div>
+                    <BulkDomainManager />
+                  </div>
+                  <div>
+                    <ThreatFeedsCard />
+                  </div>
+                  <div>
+                    <QuarantineManager />
+                  </div>
+                  <div>
+                    <IncidentCorrelation />
+                  </div>
+                  <div>
+                    <PerformanceMonitor />
+                  </div>
+                  <div>
+                    <AIMLDashboard />
                   </div>
                 </div>
               </div>

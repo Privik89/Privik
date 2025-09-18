@@ -15,6 +15,8 @@ import imaplib
 import poplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from ..database import SessionLocal
+from ..models.integration_state import IntegrationState
 
 logger = structlog.get_logger()
 
@@ -26,6 +28,10 @@ class EmailIntegrationBase:
         self.config = config
         self.is_connected = False
         self.last_sync = None
+        self.error_count = 0
+        self.retry_backoff = 1  # seconds
+        self._state_name = config.get('name') or self.__class__.__name__.lower()
+        self._cursor = None
         
     async def connect(self) -> bool:
         """Connect to email service"""
@@ -42,6 +48,29 @@ class EmailIntegrationBase:
     async def monitor_emails(self) -> AsyncGenerator[Dict[str, Any], None]:
         """Monitor emails in real-time"""
         raise NotImplementedError
+
+    def _load_state(self):
+        db = SessionLocal()
+        try:
+            st = db.query(IntegrationState).filter(IntegrationState.name == self._state_name).first()
+            if st:
+                self._cursor = st.cursor
+                self.last_sync = st.last_sync
+        finally:
+            db.close()
+
+    def _save_state(self):
+        db = SessionLocal()
+        try:
+            st = db.query(IntegrationState).filter(IntegrationState.name == self._state_name).first()
+            if not st:
+                st = IntegrationState(name=self._state_name)
+                db.add(st)
+            st.cursor = self._cursor
+            st.last_sync = self.last_sync
+            db.commit()
+        finally:
+            db.close()
 
 
 class GmailIntegration(EmailIntegrationBase):
@@ -62,6 +91,7 @@ class GmailIntegration(EmailIntegrationBase):
     async def connect(self) -> bool:
         """Connect to Gmail using OAuth2"""
         try:
+            self._load_state()
             if not self.refresh_token:
                 logger.error("Gmail refresh token not provided")
                 return False
@@ -72,7 +102,7 @@ class GmailIntegration(EmailIntegrationBase):
             # Create HTTP session
             self.session = aiohttp.ClientSession()
             
-            # Test connection
+            # Test connection (get profile)
             headers = {"Authorization": f"Bearer {self.access_token}"}
             async with self.session.get(f"{self.base_url}/users/me/profile", headers=headers) as response:
                 if response.status == 200:
@@ -85,6 +115,7 @@ class GmailIntegration(EmailIntegrationBase):
                     
         except Exception as e:
             logger.error(f"Error connecting to Gmail: {e}")
+            self.error_count += 1
             return False
     
     async def _refresh_access_token(self):
@@ -105,45 +136,124 @@ class GmailIntegration(EmailIntegrationBase):
                         logger.info("Gmail access token refreshed")
                     else:
                         logger.error(f"Failed to refresh Gmail token: {response.status}")
+                        self.error_count += 1
                         
         except Exception as e:
             logger.error(f"Error refreshing Gmail token: {e}")
+            self.error_count += 1
+    
+    async def _get_profile(self) -> Optional[Dict[str, Any]]:
+        try:
+            headers = {"Authorization": f"Bearer {self.access_token}"}
+            async with self.session.get(f"{self.base_url}/users/me/profile", headers=headers) as resp:
+                if resp.status == 200:
+                    return await resp.json()
+                return None
+        except Exception:
+            return None
     
     async def fetch_emails(self, limit: int = 100) -> List[Dict[str, Any]]:
-        """Fetch recent emails from Gmail"""
+        """Fetch recent emails from Gmail (history-based when cursor is present)"""
         try:
             if not self.is_connected:
                 await self.connect()
-                
+            
             headers = {"Authorization": f"Bearer {self.access_token}"}
+            emails: List[Dict[str, Any]] = []
             
-            # Get message list
-            params = {
-                'maxResults': limit,
-                'q': 'in:inbox'  # Only inbox emails
-            }
-            
-            async with self.session.get(f"{self.base_url}/users/me/messages", 
-                                      headers=headers, params=params) as response:
-                if response.status != 200:
-                    logger.error(f"Failed to fetch Gmail messages: {response.status}")
-                    return []
-                    
-                messages_data = await response.json()
-                messages = messages_data.get('messages', [])
+            if self._cursor:
+                # Use history-based incremental sync
+                params = {
+                    'startHistoryId': self._cursor,
+                    'historyTypes': 'messageAdded',
+                    'maxResults': min(limit, 500)
+                }
+                async with self.session.get(f"{self.base_url}/users/me/history", headers=headers, params=params) as response:
+                    if response.status == 404:
+                        # Invalid startHistoryId; reset cursor to current profile historyId
+                        logger.warning("Gmail history cursor invalid, resetting to current profile")
+                        prof = await self._get_profile()
+                        if prof and prof.get('historyId'):
+                            self._cursor = prof['historyId']
+                            self._save_state()
+                        return []
+                    if response.status != 200:
+                        logger.error(f"Failed to fetch Gmail history: {response.status}")
+                        self.error_count += 1
+                        await asyncio.sleep(self.retry_backoff)
+                        self.retry_backoff = min(self.retry_backoff * 2, 60)
+                        return []
+                    hist_data = await response.json()
                 
-                # Fetch full message details
-                emails = []
-                for message in messages[:limit]:
-                    email_data = await self._fetch_message_details(message['id'])
+                history = hist_data.get('history', [])
+                message_ids: List[str] = []
+                for h in history:
+                    for added in h.get('messagesAdded', []) or []:
+                        msg = added.get('message') or {}
+                        if msg.get('id'):
+                            message_ids.append(msg['id'])
+                
+                # Fetch full message details (dedupe)
+                seen = set()
+                for mid in message_ids:
+                    if mid in seen:
+                        continue
+                    seen.add(mid)
+                    email_data = await self._fetch_message_details(mid)
                     if email_data:
                         emails.append(email_data)
-                        
-                logger.info(f"Fetched {len(emails)} emails from Gmail")
-                return emails
                 
+                # Update cursor to the latest historyId or profile's
+                max_hist = None
+                for h in history:
+                    try:
+                        hid = int(h.get('id') or h.get('historyId') or 0)
+                        if not max_hist or hid > max_hist:
+                            max_hist = hid
+                    except Exception:
+                        continue
+                if max_hist:
+                    self._cursor = str(max_hist)
+                else:
+                    prof = await self._get_profile()
+                    if prof and prof.get('historyId'):
+                        self._cursor = prof['historyId']
+                self.last_sync = datetime.utcnow()
+                self._save_state()
+                return emails
+            
+            # Fallback: initial fetch via messages.list, then set cursor from profile
+            params = {
+                'maxResults': limit,
+                'q': 'in:inbox'
+            }
+            async with self.session.get(f"{self.base_url}/users/me/messages", headers=headers, params=params) as response:
+                if response.status != 200:
+                    logger.error(f"Failed to fetch Gmail messages: {response.status}")
+                    self.error_count += 1
+                    await asyncio.sleep(self.retry_backoff)
+                    self.retry_backoff = min(self.retry_backoff * 2, 60)
+                    return []
+                messages_data = await response.json()
+            messages = messages_data.get('messages', [])
+            for message in messages[:limit]:
+                email_data = await self._fetch_message_details(message['id'])
+                if email_data:
+                    emails.append(email_data)
+            logger.info(f"Fetched {len(emails)} emails from Gmail")
+            self.last_sync = datetime.utcnow()
+            # Set cursor to current profile historyId for next time
+            prof = await self._get_profile()
+            if prof and prof.get('historyId'):
+                self._cursor = prof['historyId']
+            self._save_state()
+            return emails
+        
         except Exception as e:
             logger.error(f"Error fetching Gmail emails: {e}")
+            self.error_count += 1
+            await asyncio.sleep(self.retry_backoff)
+            self.retry_backoff = min(self.retry_backoff * 2, 60)
             return []
     
     async def _fetch_message_details(self, message_id: str) -> Optional[Dict[str, Any]]:
@@ -265,10 +375,16 @@ class Microsoft365Integration(EmailIntegrationBase):
         self.oauth_url = f"https://login.microsoftonline.com/{self.tenant_id}/oauth2/v2.0/token"
         
     async def connect(self) -> bool:
-        """Connect to Microsoft 365 using client credentials"""
+        """Connect to Microsoft 365 using client credentials or refresh token if provided"""
         try:
-            # Get access token using client credentials flow
-            await self._get_access_token()
+            # Prefer on-behalf-of/user delegated token if supplied
+            self.refresh_token = self.config.get('refresh_token')
+            self._load_state()
+            if self.refresh_token:
+                await self._get_access_token_with_refresh()
+            else:
+                # Get access token using client credentials flow
+                await self._get_access_token()
             
             # Create HTTP session
             self.session = aiohttp.ClientSession()
@@ -286,6 +402,7 @@ class Microsoft365Integration(EmailIntegrationBase):
                     
         except Exception as e:
             logger.error(f"Error connecting to Microsoft 365: {e}")
+            self.error_count += 1
             return False
     
     async def _get_access_token(self):
@@ -310,41 +427,70 @@ class Microsoft365Integration(EmailIntegrationBase):
         except Exception as e:
             logger.error(f"Error getting Microsoft 365 token: {e}")
     
+    async def _get_access_token_with_refresh(self):
+        """Use a refresh token to acquire an access token for Microsoft Graph."""
+        try:
+            data = {
+                'client_id': self.client_id,
+                'client_secret': self.client_secret,
+                'grant_type': 'refresh_token',
+                'refresh_token': self.refresh_token,
+                'scope': 'https://graph.microsoft.com/.default offline_access'
+            }
+            async with aiohttp.ClientSession() as session:
+                async with session.post(self.oauth_url, data=data) as response:
+                    if response.status == 200:
+                        token_data = await response.json()
+                        self.access_token = token_data['access_token']
+                        logger.info("Microsoft 365 access token obtained via refresh token")
+                    else:
+                        logger.error(f"Failed to refresh Microsoft 365 token: {response.status}")
+        except Exception as e:
+            logger.error(f"Error refreshing Microsoft 365 token: {e}")
+    
     async def fetch_emails(self, limit: int = 100) -> List[Dict[str, Any]]:
-        """Fetch recent emails from Microsoft 365"""
+        """Fetch recent emails from Microsoft 365 using delta sync when available"""
         try:
             if not self.is_connected:
                 await self.connect()
-                
+            
             headers = {"Authorization": f"Bearer {self.access_token}"}
+            # Determine URL: use stored delta cursor if available; otherwise start a new delta query
+            delta_url = self._cursor or f"{self.base_url}/me/mailFolders/inbox/messages/delta?$top={limit}&$orderby=receivedDateTime desc"
             
-            # Get messages from inbox
-            params = {
-                '$top': limit,
-                '$orderby': 'receivedDateTime desc'
-            }
-            
-            async with self.session.get(f"{self.base_url}/me/mailFolders/inbox/messages",
-                                      headers=headers, params=params) as response:
+            async with self.session.get(delta_url, headers=headers) as response:
                 if response.status != 200:
-                    logger.error(f"Failed to fetch Microsoft 365 messages: {response.status}")
+                    # Handle invalid delta (410) by resetting cursor and trying a fresh delta start next time
+                    if response.status == 410:
+                        logger.warning("Delta token invalid, resetting state")
+                        self._cursor = None
+                        self._save_state()
+                    else:
+                        logger.error(f"Failed to fetch Microsoft 365 messages (delta): {response.status}")
+                    self.error_count += 1
+                    await asyncio.sleep(self.retry_backoff)
+                    self.retry_backoff = min(self.retry_backoff * 2, 60)
                     return []
-                    
                 messages_data = await response.json()
-                messages = messages_data.get('value', [])
-                
-                # Process messages
-                emails = []
-                for message in messages:
-                    email_data = self._process_message(message)
-                    if email_data:
-                        emails.append(email_data)
-                        
-                logger.info(f"Fetched {len(emails)} emails from Microsoft 365")
-                return emails
-                
+            
+            messages = messages_data.get('value', [])
+            emails: List[Dict[str, Any]] = []
+            for message in messages:
+                email_data = self._process_message(message)
+                if email_data:
+                    emails.append(email_data)
+            
+            logger.info(f"Fetched {len(emails)} emails from Microsoft 365")
+            self.last_sync = datetime.utcnow()
+            # Update cursor from Graph response
+            self._cursor = messages_data.get('@odata.deltaLink') or messages_data.get('@odata.nextLink') or self._cursor
+            self._save_state()
+            return emails
         except Exception as e:
             logger.error(f"Error fetching Microsoft 365 emails: {e}")
+            self.error_count += 1
+            await asyncio.sleep(self.retry_backoff)
+            self.retry_backoff = min(self.retry_backoff * 2, 60)
             return []
     
     def _process_message(self, message: Dict[str, Any]) -> Dict[str, Any]:
@@ -427,6 +573,7 @@ class IMAPIntegration(EmailIntegrationBase):
     async def connect(self) -> bool:
         """Connect to IMAP server"""
         try:
+            self._load_state()
             if self.use_ssl:
                 self.connection = imaplib.IMAP4_SSL(self.host, self.port)
             else:
@@ -441,6 +588,7 @@ class IMAPIntegration(EmailIntegrationBase):
             
         except Exception as e:
             logger.error(f"Error connecting to IMAP server: {e}")
+            self.error_count += 1
             return False
     
     async def fetch_emails(self, limit: int = 100) -> List[Dict[str, Any]]:
@@ -465,10 +613,16 @@ class IMAPIntegration(EmailIntegrationBase):
                     emails.append(email_data)
             
             logger.info(f"Fetched {len(emails)} emails from IMAP")
+            self.last_sync = datetime.utcnow()
+            self._cursor = None
+            self._save_state()
             return emails
             
         except Exception as e:
             logger.error(f"Error fetching IMAP emails: {e}")
+            self.error_count += 1
+            await asyncio.sleep(self.retry_backoff)
+            self.retry_backoff = min(self.retry_backoff * 2, 60)
             return []
     
     async def _fetch_imap_message(self, msg_id: bytes) -> Optional[Dict[str, Any]]:

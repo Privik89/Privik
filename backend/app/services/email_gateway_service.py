@@ -23,6 +23,8 @@ from ..models.email import Email, EmailAttachment
 from ..models.click import ClickEvent
 from ..models.threat import ThreatIntel, ThreatIndicator
 from ..database import get_db
+from .training_logger import TrainingLogger
+from ..core.config import get_settings
 
 logger = structlog.get_logger()
 
@@ -61,6 +63,7 @@ class EmailGatewayService:
         # self.sandbox_service = None  # TODO: Implement SandboxService
         self.processing_queue = asyncio.Queue()
         self.is_running = False
+        self.training_logger: Optional[TrainingLogger] = None
         
         # Processing statistics
         self.stats = {
@@ -109,6 +112,13 @@ class EmailGatewayService:
             attachment_config = self.config.get('attachment_validator', {})
             self.attachment_validator = get_attachment_validator(attachment_config)
             
+            # Initialize training logger
+            training_logger_config = self.config.get('training_logger', {
+                'enabled': True,
+                'storage_path': './training_data'
+            })
+            self.training_logger = TrainingLogger(training_logger_config)
+
             # Initialize sandbox service (TODO: Implement SandboxService)
             # sandbox_config = self.config.get('sandbox', {})
             # self.sandbox_service = SandboxService(sandbox_config)
@@ -193,6 +203,8 @@ class EmailGatewayService:
             
             # Step 7: AI threat detection
             ai_result = await self.ai_threat_detection.predict_email_threat(email_data)
+            # Phase 1: intent labeling for training
+            intent_result = await self.ai_threat_detection.predict_email_intent(email_data)
             
             # Step 8: Calculate combined threat score
             combined_threat_score = self._calculate_combined_threat_score(
@@ -219,6 +231,27 @@ class EmailGatewayService:
             # Update statistics
             self._update_statistics(processing_time, action, combined_threat_score)
             
+            # Phase 1: Log training data sample (with intent labeling)
+            try:
+                if self.training_logger:
+                    self.training_logger.log_email_sample(
+                        email_input=email_data,
+                        ai_output={
+                            'threat_type': ai_result.threat_type,
+                            'confidence': ai_result.confidence,
+                            'threat_score': ai_result.threat_score,
+                            'indicators': ai_result.indicators,
+                            'model_version': ai_result.model_version,
+                            'intent': intent_result.get('intent'),
+                            'intent_confidence': intent_result.get('confidence'),
+                            'intent_indicators': intent_result.get('indicators'),
+                        },
+                        combined_score=combined_threat_score,
+                        action=action.value,
+                    )
+            except Exception as e:
+                logger.error("Training log failed", error=str(e))
+
             result = EmailProcessingResult(
                 email_id=str(email_record.id),
                 action=action,
@@ -636,16 +669,25 @@ async def get_email_gateway_service() -> EmailGatewayService:
     global email_gateway_service
     if email_gateway_service is None:
         # Initialize with default config
+        settings = get_settings()
         config = {
             'email_integrations': {
-                'gmail': {'enabled': False},
-                'microsoft365': {'enabled': False},
-                'imap': {'enabled': False}
+                'gmail': {'enabled': settings.enable_gmail_ingest},
+                'microsoft365': {'enabled': settings.enable_o365_ingest},
+                'imap': {'enabled': settings.enable_imap_ingest}
             },
             'ai_threat_detection': {
                 'model_storage_path': './models',
                 'retrain_interval': 7
             },
+                'training_logger': {
+                    'enabled': True,
+                    'storage_path': './training_data'
+                },
+            # CAPE settings surface-level for sandbox
+            'cape_enabled': settings.cape_enabled,
+            'cape_base_url': settings.cape_base_url,
+            'cape_api_token': settings.cape_api_token,
             'sandbox': {
                 'timeout': 30,
                 'max_file_size': '50MB'

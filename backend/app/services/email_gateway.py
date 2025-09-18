@@ -31,7 +31,12 @@ class EmailGateway:
     
     def __init__(self, config: Dict[str, Any]):
         self.config = config
-        self.sandbox = RealTimeSandbox(config.get('sandbox', {}))
+        # Pass CAPE settings into sandbox
+        sandbox_cfg = config.get('sandbox', {})
+        for key in ['cape_enabled', 'cape_base_url', 'cape_api_token']:
+            if key in config:
+                sandbox_cfg[key] = config[key]
+        self.sandbox = RealTimeSandbox(sandbox_cfg)
         self.link_rewrite_domain = config.get('link_rewrite_domain', 'links.privik.com')
         self.attachment_storage = config.get('attachment_storage', '/tmp/attachments')
         self.zero_trust_policies = config.get('zero_trust_policies', {})

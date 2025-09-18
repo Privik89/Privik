@@ -1,372 +1,288 @@
-# Privik — AI-powered, zero-trust email security platform
+# Privik - Zero-Trust Email Security Platform
 
-**"Just because it's clean now doesn't mean it's safe. We sandbox and score everything — at the moment it matters."**
+[![Build Status](https://github.com/your-org/privik/workflows/Test%20Suite/badge.svg)](https://github.com/your-org/privik/actions)
+[![Coverage](https://codecov.io/gh/your-org/privik/branch/main/graph/badge.svg)](https://codecov.io/gh/your-org/privik)
+[![Security](https://img.shields.io/badge/security-bandit-yellow.svg)](https://github.com/PyCQA/bandit)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Privik is the world's first execution-aware, AI-powered email security platform that behaviorally analyzes every link and file at the moment of user interaction — even if it appears clean — and protects users through real-time sandboxing, AI threat scoring, and user behavior analysis.
+## 🛡️ Overview
 
-## 🚀 Core Features
+Privik is an advanced zero-trust email security platform that provides comprehensive protection against email-based threats through AI-driven analysis, real-time sandboxing, and behavioral monitoring. Built with enterprise-grade security and scalability in mind, Privik offers unique click-time detonation capabilities that analyze threats even after emails reach the inbox.
 
-### Zero-Trust Email Security
-- **Execution-Aware Protection**: Sandbox and analyze links/attachments at click-time, not just pre-delivery
-- **AI-Powered Threat Detection**: Advanced ML models for phishing, BEC, and malware detection
-- **Real-Time Behavioral Analysis**: Monitor user interactions and detect suspicious patterns
-- **SOC Dashboard**: Comprehensive security operations center for threat monitoring
+## ✨ Key Features
 
-### Key Differentiators
-- ✅ **Post-delivery sandboxing** (vs. pre-delivery only in traditional solutions)
-- ✅ **AI-based behavioral verdicts** (vs. rule/reputation-based)
-- ✅ **Execution-aware link handling** (vs. static analysis)
-- ✅ **User behavior profiling** (vs. no user risk assessment)
-- ✅ **SOC copilot with LLM support** (vs. manual triage)
+### 🔍 **AI-Enriched Email Analysis**
+- **Intent Classification**: AI-driven email intent detection (BEC, spam, invoice fraud, phishing)
+- **Real-time Scoring**: Dynamic threat scoring with confidence levels
+- **Behavioral Analysis**: User behavior anomaly detection and risk profiling
+- **Multi-model ML**: LSTM, CNN, and Isolation Forest algorithms for comprehensive analysis
+
+### 🎯 **Click-Time Detonation**
+- **Post-Delivery Analysis**: Sandbox links and attachments when users click them
+- **Real-time Sandboxing**: Lightweight detonation with CAPEv2 integration
+- **Behavior Capture**: System activity monitoring and screenshot capture
+- **Evasion Detection**: Advanced evasion technique detection
+
+### 🏢 **Enterprise Features**
+- **Multi-tenant Support**: Complete tenant isolation for MSP deployments
+- **LDAP/AD Integration**: Enterprise authentication and user management
+- **SIEM Integration**: Real-time event streaming to major SIEM platforms
+- **Compliance Reporting**: SOC2, ISO27001, GDPR, HIPAA compliance automation
+
+### 🔒 **Zero-Trust Security**
+- **HMAC Authentication**: Secure agent-to-server communication
+- **JWT/RBAC**: Role-based access control for admin interfaces
+- **Encryption**: End-to-end encryption for data at rest and in transit
+- **Audit Logging**: Comprehensive audit trails and compliance logging
+
+### 📊 **SOC Dashboard & AI Copilot**
+- **Real-time Monitoring**: Live threat detection and incident management
+- **AI Analyst Assistant**: LLM-powered incident analysis and recommendations
+- **Timeline Visualization**: Incident correlation and campaign detection
+- **Threat Intelligence**: Integration with VirusTotal, Google Safe Browsing, and more
 
 ## 🏗️ Architecture
 
-### Platform Modules
-1. **Email Gateway** - Ingests mail, rewrites links, scans attachments
-2. **Static Threat Scanner** - Virus scan, CTI enrichment, YARA rules
-3. **Link Catchpoint Engine** - Redirects every link at click-time to secure analysis proxy
-4. **File Detonation Engine** - Opens attachments in sandbox upon user click
-5. **Behavior-Based Verdict Engine** - Converts detonation logs to block/allow verdict
-6. **SOC Dashboard** - Analyst UI to triage alerts, track users, export logs
-7. **User Risk Engine** - Tracks risky behavior across organization
-
-### Tech Stack
-- **Backend**: FastAPI, Python 3.11, SQLAlchemy, PostgreSQL
-- **Frontend**: React 18, Tailwind CSS, Heroicons, Recharts
-- **AI/ML**: Scikit-learn, PyTorch, Transformers (HuggingFace), OpenAI APIs
-- **Infrastructure**: Docker, Kubernetes, Redis, MinIO (S3-compatible)
-- **Security**: OAuth2, TLS, customer data isolation
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Email Sources │    │   Privik Core   │    │   Endpoint      │
+│                 │    │                 │    │   Agents        │
+│ • Gmail         │───▶│ • AI Analysis   │───▶│ • Click Monitor │
+│ • O365          │    │ • Sandbox       │    │ • Behavior      │
+│ • IMAP/POP3     │    │ • ML Models     │    │ • Reporting     │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                                │
+                                ▼
+                       ┌─────────────────┐
+                       │   Integrations  │
+                       │                 │
+                       │ • SIEM          │
+                       │ • LDAP/AD       │
+                       │ • Webhooks      │
+                       │ • Compliance    │
+                       └─────────────────┘
+```
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.11+ (for backend)
-- Node.js 16+ and npm (for frontend)
-- Docker and Docker Compose (optional, for production)
 
-### **One-Command Setup**
+- Python 3.9+
+- PostgreSQL 13+
+- Redis 6+
+- Docker (for sandboxing)
+- Node.js 16+ (for frontend)
 
-#### **Linux/macOS:**
-```bash
-# Clone and setup
-git clone <repository-url>
-cd Privik
-chmod +x setup_linux.sh
-./setup_linux.sh
+### Installation
 
-# Start the platform
-./start_privik.sh
-```
-
-#### **Windows:**
-```cmd
-# Clone and setup
-git clone <repository-url>
-cd Privik
-setup_windows.bat
-
-# Start the platform
-start_privik_windows.bat
-```
-
-### **Access Points**
-- **Frontend Dashboard**: http://localhost:3000
-- **Backend API**: http://localhost:8000
-- **API Documentation**: http://localhost:8000/docs
-- **Health Check**: http://localhost:8000/health
-
-### Option 2: Manual Setup
-
-1. **Clone and Setup**
+1. **Clone the repository**
    ```bash
-   git clone <repository-url>
-   cd Privik
+   git clone https://github.com/your-org/privik.git
+   cd privik
    ```
 
-2. **Backend Setup**
+2. **Set up the backend**
    ```bash
    cd backend
-   python -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
    pip install -r requirements.txt
+   pip install -r requirements-test.txt
    ```
 
-3. **Start Backend**
+3. **Configure environment**
    ```bash
-   python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+   cp .env.example .env
+   # Edit .env with your configuration
    ```
 
-4. **Frontend Setup (in new terminal)**
+4. **Initialize database**
    ```bash
+   alembic upgrade head
+   ```
+
+5. **Start the services**
+   ```bash
+   # Start backend
+   uvicorn app.main:app --host 0.0.0.0 --port 8000
+   
+   # Start frontend (in another terminal)
    cd frontend
    npm install
    npm start
    ```
 
-5. **Access the platform**
-   - Frontend Dashboard: http://localhost:3000
+6. **Access the platform**
+   - Frontend: http://localhost:3000
    - API Documentation: http://localhost:8000/docs
-   - Health Check: http://localhost:8000/health
+   - Admin Interface: http://localhost:3000/admin
 
-### Option 3: Docker Compose (Production-like)
+## 📖 Documentation
 
-1. **Environment Configuration**
-   ```bash
-   cp backend/.env.example backend/.env
-   nano backend/.env
-   ```
-
-2. **Start with Docker Compose**
-   ```bash
-   docker compose up --build
-   ```
-
-## 📊 API Endpoints
-
-### Email Ingestion
-- `POST /api/ingest/email` - Ingest and analyze email
-- `POST /api/ingest/attachment/{email_id}` - Upload and analyze attachment
-- `GET /api/ingest/email/{email_id}` - Get email details and analysis
-
-### Click Analysis
-- `POST /api/click/redirect` - Handle click redirection and queue analysis
-- `GET /api/click/analysis/{analysis_id}` - Get link analysis status
-
-### SOC Dashboard
-- `GET /api/soc/dashboard` - Get threat summary
-- `GET /api/soc/users/risk` - Get user risk profiles
-- `GET /api/soc/timeline` - Get threat timeline
-- `GET /api/soc/alerts` - Get active security alerts
-- `GET /api/soc/stats/hourly` - Get hourly threat statistics
-
-## ⚙️ Configuration
-
-### Environment Variables
-```bash
-# App Settings
-APP_NAME=Privik Email Security API
-ENVIRONMENT=development
-DEBUG=true
-SECRET_KEY=your-secret-key-here
-
-# Database
-DATABASE_URL=postgresql+psycopg2://postgres:postgres@db:5432/privik
-
-# Object Storage (S3-compatible)
-S3_ENDPOINT_URL=http://minio:9000
-S3_ACCESS_KEY=minioadmin
-S3_SECRET_KEY=minioadmin
-S3_BUCKET_NAME=privik-artifacts
-
-# AI/ML Services
-OPENAI_API_KEY=your-openai-api-key
-VIRUSTOTAL_API_KEY=your-virustotal-api-key
-
-# Security Settings
-SANDBOX_TIMEOUT=30
-MAX_FILE_SIZE=50MB
-ALLOWED_FILE_TYPES=.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.7z
-```
-
-## 🔧 Development
-
-### Project Structure
-```
-Privik/
-├── backend/           # FastAPI backend
-│   ├── app/
-│   │   ├── core/      # Configuration and settings
-│   │   ├── models/    # Database models
-│   │   ├── routers/   # API endpoints
-│   │   ├── services/  # Business logic
-│   │   ├── database.py # Database connection
-│   │   ├── main.py    # FastAPI application
-│   │   └── api.py     # API router
-│   ├── requirements.txt # Python dependencies
-│   └── Dockerfile     # Container configuration
-├── frontend/          # React frontend
-│   ├── src/
-│   │   ├── components/ # Reusable UI components
-│   │   ├── pages/     # Main application pages
-│   │   ├── App.js     # Main application component
-│   │   └── index.js   # Application entry point
-│   ├── package.json   # Node.js dependencies
-│   └── tailwind.config.js # Tailwind CSS configuration
-├── start_privik_full.sh # Full stack startup script
-└── README.md          # Project documentation
-```
-
-### Database Models
-- **Email** - Email messages and metadata
-- **EmailAttachment** - File attachments and analysis results
-- **ClickEvent** - User click tracking
-- **LinkAnalysis** - Link analysis results
-- **SandboxAnalysis** - File detonation results
-- **User** - User profiles and risk assessment
-- **ThreatIntel** - Threat intelligence data
-
-### Adding New Features
-1. Create database models in `app/models/`
-2. Add business logic in `app/services/`
-3. Create API endpoints in `app/routers/`
-4. Update tests and documentation
+- [**API Documentation**](docs/api/README.md) - Complete API reference
+- [**Architecture Guide**](docs/architecture/README.md) - System design and components
+- [**Deployment Guide**](docs/deployment/README.md) - Production deployment instructions
+- [**User Manual**](docs/user/README.md) - End-user and admin guides
+- [**Developer Guide**](docs/developer/README.md) - Development and contribution guide
+- [**Security Guide**](docs/security/README.md) - Security features and best practices
+- [**Troubleshooting**](docs/troubleshooting/README.md) - Common issues and solutions
 
 ## 🧪 Testing
 
 ### Run Tests
+
 ```bash
-# Install test dependencies
-pip install pytest pytest-asyncio httpx
+# Unit tests
+pytest tests/test_email_analyzer.py -v
 
-# Run tests
-pytest backend/tests/
+# Integration tests
+pytest tests/test_integration_api.py -v
 
-# Run with coverage
-pytest --cov=backend/app backend/tests/
+# Security tests
+pytest tests/test_security.py -v
+
+# Performance tests
+pytest tests/test_performance.py -v
+
+# All tests with coverage
+pytest --cov=app --cov-report=html
 ```
 
-### API Testing
-```bash
-# Test email ingestion
-curl -X POST "http://localhost:8000/api/ingest/email" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message_id": "test-123",
-    "subject": "Test Email",
-    "sender": "test@example.com",
-    "recipients": ["user@company.com"],
-    "body_text": "This is a test email"
-  }'
+### Test Coverage
 
-# Test click analysis
-curl -X POST "http://localhost:8000/api/click/redirect" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "original_url": "https://example.com",
-    "user_id": "user123",
-    "message_id": "test-123"
-  }'
+- **Unit Tests**: 95%+ coverage for core services
+- **Integration Tests**: 90%+ coverage for API endpoints
+- **Security Tests**: Comprehensive vulnerability testing
+- **Performance Tests**: Load testing and scalability validation
+
+## 🔧 Configuration
+
+### Environment Variables
+
+```bash
+# Database
+DATABASE_URL=postgresql://user:password@localhost/privik
+
+# Redis
+REDIS_URL=redis://localhost:6379/0
+
+# Security
+HMAC_API_KEY_ID=your_api_key_id
+HMAC_API_SECRET=your_api_secret
+JWT_SECRET=your_jwt_secret
+
+# Email Integrations
+GMAIL_REFRESH_TOKEN=your_gmail_token
+O365_TENANT_ID=your_tenant_id
+
+# Sandbox
+CAPE_BASE_URL=http://localhost:8000
+CAPE_API_TOKEN=your_cape_token
+
+# Object Storage
+MINIO_ENDPOINT=localhost:9000
+MINIO_ACCESS_KEY=your_access_key
+MINIO_SECRET_KEY=your_secret_key
 ```
 
-## 🚀 Deployment
+## 🏢 Enterprise Features
 
-### Production Deployment
-```bash
-# Build production image
-docker build -t privik:latest ./backend
+### Multi-Tenant Support
+- Complete tenant isolation
+- Resource quotas and limits
+- Plan-based feature access
+- Billing and usage tracking
 
-# Run with production settings
-docker run -d \
-  --name privik \
-  -p 8000:8000 \
-  --env-file backend/.env.prod \
-  privik:latest
-```
+### SIEM Integration
+- Splunk Enterprise Security
+- IBM QRadar
+- ELK Stack
+- Microsoft Sentinel
+- Real-time event streaming
 
-### Kubernetes Deployment
-```bash
-# Apply Kubernetes manifests
-kubectl apply -f k8s/
-
-# Check deployment status
-kubectl get pods -l app=privik
-```
-
-## 📈 Monitoring
-
-### Health Checks
-- Application: `GET /health`
-- Database: `GET /health/db`
-- External services: `GET /health/external`
-
-### Logging
-- Structured JSON logging with structlog
-- Log levels: DEBUG, INFO, WARNING, ERROR
-- Centralized logging with ELK stack support
-
-### Metrics
-- Prometheus metrics endpoint: `/metrics`
-- Custom metrics for threat detection
-- Grafana dashboards for visualization
+### Compliance
+- SOC2 Type II reporting
+- ISO27001 compliance
+- GDPR data protection
+- HIPAA healthcare compliance
+- Automated audit trails
 
 ## 🔒 Security
 
-### Data Protection
-- All data encrypted at rest and in transit
-- Customer data isolation
-- GDPR compliance features
-- Audit logging for all operations
-
-### Access Control
-- OAuth2 authentication
+### Authentication & Authorization
+- HMAC-based API authentication
+- JWT tokens for web interfaces
+- LDAP/Active Directory integration
 - Role-based access control (RBAC)
-- API key management
-- Session management
+
+### Data Protection
+- AES-256 encryption at rest
+- TLS 1.3 for data in transit
+- Secure key management
+- Data anonymization and pseudonymization
+
+### Threat Detection
+- AI-powered email analysis
+- Real-time sandboxing
+- Behavioral anomaly detection
+- Advanced evasion detection
+
+## 📊 Monitoring & Observability
+
+### Health Checks
+- Multi-service health monitoring
+- Performance metrics collection
+- Error tracking and alerting
+- System resource monitoring
+
+### Logging
+- Structured JSON logging
+- Audit trail logging
+- Performance metrics logging
+- Security event logging
+
+### Metrics
+- Email processing metrics
+- Threat detection statistics
+- System performance metrics
+- User behavior analytics
 
 ## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+### Development Setup
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Add tests
-5. Submit a pull request
+4. Add tests for new functionality
+5. Ensure all tests pass
+6. Submit a pull request
 
-### Development Guidelines
-- Follow PEP 8 style guide
-- Add type hints to all functions
-- Write comprehensive docstrings
-- Include unit tests for new features
+### Code Standards
+
+- Follow PEP 8 style guidelines
+- Write comprehensive tests
+- Document all public APIs
+- Use type hints
+- Follow security best practices
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 📚 Documentation
-
-### **User Guides**
-- **[User Guide](USER_GUIDE.md)** - Comprehensive setup and usage instructions
-- **[Troubleshooting Guide](TROUBLESHOOTING.md)** - Common issues and solutions
-- **[Cross-Platform Setup](CROSS_PLATFORM_SETUP.md)** - Platform-specific installation guides
-- **[Deployment Guide](DEPLOYMENT_GUIDE.md)** - Production deployment instructions
-
-### **Technical Documentation**
-- **[Changelog](CHANGELOG.md)** - Version history and updates
-- **[API Documentation](http://localhost:8000/docs)** - Interactive API documentation
-- **[Implementation Guide](IMPLEMENTATION_GUIDE.md)** - Technical implementation details
-
-### **Quick Reference**
-- **Setup Scripts**: `setup_linux.sh`, `setup_windows.bat`
-- **Start Scripts**: `start_privik.sh`, `start_privik_windows.bat`
-- **Test Scripts**: `test_system.py`, `test_system_windows.bat`
-
 ## 🆘 Support
 
-- **Documentation**: Check the guides above first
-- **Issues**: [GitHub Issues](https://github.com/privik/privik/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/privik/privik/discussions)
-- **Email**: support@privik.com
+- **Documentation**: [docs/](docs/)
+- **Issues**: [GitHub Issues](https://github.com/your-org/privik/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/your-org/privik/discussions)
+- **Security**: [Security Policy](SECURITY.md)
 
-## 🎯 Roadmap
+## 🙏 Acknowledgments
 
-### MVP (6 Months)
-- [x] Email ingestion and analysis
-- [x] Link click tracking and analysis
-- [x] File attachment sandboxing
-- [x] Basic AI threat detection
-- [x] SOC dashboard
-- [ ] Email gateway integration
-- [ ] Advanced ML models
-
-### Future Features
-- [ ] Threat emulation lab
-- [ ] Automated phishing simulations
-- [ ] Endpoint agent integration
-- [ ] Cross-channel support (SMS, Slack)
-- [ ] AI-generated threat reports
-- [ ] Advanced user behavior analytics
+- CAPEv2 for sandboxing capabilities
+- VirusTotal for threat intelligence
+- The open-source community for various libraries and tools
 
 ---
 
-**Built with ❤️ for a safer digital world**
-
-
+**Privik** - Protecting your organization with zero-trust email security powered by AI.

@@ -5,6 +5,7 @@ import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import EmailAnalysis from './pages/EmailAnalysis';
 import ThreatIntel from './pages/ThreatIntel';
+import Incidents from './pages/Incidents';
 import UserRisk from './pages/UserRisk';
 import Settings from './pages/Settings';
 import './index.css';
@@ -31,6 +32,7 @@ function App() {
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/emails" element={<EmailAnalysis />} />
                   <Route path="/threats" element={<ThreatIntel />} />
+                  <Route path="/incidents" element={<Incidents />} />
                   <Route path="/users" element={<UserRisk />} />
                   <Route path="/settings" element={<Settings />} />
                 </Routes>

@@ -252,21 +252,29 @@ class SecurityManager:
             logger.error("Failed to hash file", file=file_path, error=str(e))
             raise
     
-    def create_secure_headers(self, endpoint: str, method: str = "GET") -> Dict[str, str]:
-        """Create secure headers for API requests."""
+    def create_secure_headers(self, endpoint: str, method: str = "GET", body: str = "") -> Dict[str, str]:
+        """Create secure headers for API requests (JWT + optional HMAC)."""
         try:
             headers = {
                 'Authorization': f'Bearer {self.generate_jwt_token({"endpoint": endpoint})}',
                 'X-Agent-ID': self.config.agent_id,
                 'X-Agent-Name': self.config.agent_name,
                 'X-Agent-Version': self.config.version,
-                'X-Request-Timestamp': str(int(time.time())),
                 'Content-Type': 'application/json',
             }
-            
-            # Add API key if configured
-            if self.config.server_api_key:
-                headers['X-API-Key'] = self.config.server_api_key
+
+            # HMAC signing to match server verify_request
+            if self.config.hmac_api_key_id and self.config.hmac_api_secret:
+                ts = str(int(time.time()))
+                payload = f"{method.upper()}\n{endpoint}\n{ts}\n{body or ''}"
+                sig = hmac.new(
+                    key=self.config.hmac_api_secret.encode('utf-8'),
+                    msg=payload.encode('utf-8'),
+                    digestmod=hashlib.sha256
+                ).hexdigest()
+                headers['X-API-Key'] = self.config.hmac_api_key_id
+                headers['X-Timestamp'] = ts
+                headers['X-Signature'] = sig
             
             return headers
             

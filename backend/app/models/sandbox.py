@@ -40,6 +40,10 @@ class SandboxAnalysis(Base):
     ai_confidence = Column(Float, default=0.0)
     ai_details = Column(JSON, nullable=True)
     
+    # Artifacts
+    artifacts_report_key = Column(String(500), nullable=True)
+    artifacts_screenshots = Column(JSON, nullable=True)
+    
     # Relationships
     # attachment = relationship("EmailAttachment", back_populates="sandbox_analysis")  # Commented out to avoid circular import
     verdicts = relationship("SandboxVerdict", back_populates="analysis")

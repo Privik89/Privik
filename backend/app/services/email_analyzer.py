@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from ..database import SessionLocal
 from ..models.email import Email
 from ..core.config import get_settings
+from .domain_reputation import DomainReputationService
 
 logger = structlog.get_logger()
 settings = get_settings()
@@ -74,11 +75,15 @@ async def _perform_email_analysis(content: str, subject: str, sender: str) -> Di
         sender_analysis = _analyze_sender(sender)
         result["static_scan_result"]["sender"] = sender_analysis
         
-        # 4. AI-powered analysis
+        # 4. Domain reputation analysis
+        domain_analysis = await _analyze_domain_reputation(content, sender)
+        result["static_scan_result"]["domain_reputation"] = domain_analysis
+        
+        # 5. AI-powered analysis
         ai_analysis = await _perform_ai_email_analysis(content, subject, sender)
         result.update(ai_analysis)
         
-        # 5. Calculate final threat score
+        # 6. Calculate final threat score
         result["threat_score"] = _calculate_email_threat_score(result)
         result["is_suspicious"] = result["threat_score"] > 0.5
         result["ai_verdict"] = "malicious" if result["threat_score"] > 0.8 else \
@@ -256,6 +261,114 @@ async def _perform_ai_email_analysis(content: str, subject: str, sender: str) ->
     }
 
 
+async def _analyze_domain_reputation(content: str, sender: str) -> Dict[str, Any]:
+    """Analyze domain reputation for sender and links in email content."""
+    
+    result = {
+        "sender_domain_score": 0.5,  # Default neutral score
+        "link_domain_scores": [],
+        "overall_domain_threat": 0.0,
+        "threat_indicators": [],
+        "analysis_method": "domain_reputation"
+    }
+    
+    try:
+        async with DomainReputationService() as reputation_service:
+            # Extract sender domain
+            sender_domain = _extract_domain_from_email(sender)
+            
+            # Extract link domains from content
+            link_domains = _extract_link_domains(content)
+            
+            # Collect all domains to score
+            domains_to_score = []
+            if sender_domain:
+                domains_to_score.append(sender_domain)
+            domains_to_score.extend(link_domains)
+            
+            if not domains_to_score:
+                return result
+            
+            # Score all domains in parallel
+            domain_scores = await reputation_service.bulk_score_domains(domains_to_score)
+            
+            # Process sender domain score
+            if sender_domain:
+                sender_score = next((ds for ds in domain_scores if ds.domain == sender_domain), None)
+                if sender_score:
+                    result["sender_domain_score"] = sender_score.reputation_score
+                    result["threat_indicators"].extend(sender_score.threat_indicators)
+            
+            # Process link domain scores
+            link_scores = []
+            for domain_score in domain_scores:
+                if domain_score.domain in link_domains:
+                    link_scores.append({
+                        "domain": domain_score.domain,
+                        "score": domain_score.reputation_score,
+                        "risk_level": domain_score.risk_level,
+                        "threat_indicators": domain_score.threat_indicators
+                    })
+                    result["threat_indicators"].extend(domain_score.threat_indicators)
+            
+            result["link_domain_scores"] = link_scores
+            
+            # Calculate overall domain threat score
+            all_scores = [result["sender_domain_score"]] + [ls["score"] for ls in link_scores]
+            if all_scores:
+                # Use lowest score (most malicious) as overall threat
+                result["overall_domain_threat"] = 1.0 - min(all_scores)
+            
+            # Remove duplicate threat indicators
+            result["threat_indicators"] = list(set(result["threat_indicators"]))
+            
+    except Exception as e:
+        logger.error("Error in domain reputation analysis", error=str(e))
+        result["analysis_method"] = "error"
+    
+    return result
+
+
+def _extract_domain_from_email(email: str) -> Optional[str]:
+    """Extract domain from email address."""
+    try:
+        if '@' in email:
+            return email.split('@')[1].lower()
+        return None
+    except:
+        return None
+
+
+def _extract_link_domains(content: str) -> List[str]:
+    """Extract domains from URLs in email content."""
+    domains = []
+    
+    try:
+        # URL pattern matching
+        url_pattern = r'https?://([^/\s]+)'
+        urls = re.findall(url_pattern, content, re.IGNORECASE)
+        
+        for url_domain in urls:
+            # Clean domain (remove port, path fragments)
+            domain = url_domain.split(':')[0].split('/')[0].lower()
+            if domain and domain not in domains:
+                domains.append(domain)
+        
+        # Also check for domains without protocol
+        domain_pattern = r'([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}'
+        found_domains = re.findall(domain_pattern, content, re.IGNORECASE)
+        
+        for domain in found_domains:
+            domain = domain.lower()
+            if domain not in domains and len(domain) > 3:  # Filter out very short matches
+                domains.append(domain)
+                
+    except Exception as e:
+        logger.error("Error extracting link domains", error=str(e))
+    
+    return domains
+
+
 def _calculate_email_threat_score(analysis: Dict[str, Any]) -> float:
     """Calculate threat score based on email analysis results."""
     
@@ -278,6 +391,23 @@ def _calculate_email_threat_score(analysis: Dict[str, Any]) -> float:
     sender_analysis = analysis.get("static_scan_result", {}).get("sender", {})
     if sender_analysis.get("is_suspicious"):
         score += 0.2
+    
+    # Domain reputation analysis
+    domain_analysis = analysis.get("static_scan_result", {}).get("domain_reputation", {})
+    if domain_analysis.get("overall_domain_threat", 0) > 0.7:
+        score += 0.4  # High domain threat
+    elif domain_analysis.get("overall_domain_threat", 0) > 0.4:
+        score += 0.2  # Medium domain threat
+    
+    # Add domain threat indicators
+    threat_indicators = domain_analysis.get("threat_indicators", [])
+    for indicator in threat_indicators:
+        if "malicious" in indicator:
+            score += 0.15
+        elif "suspicious" in indicator:
+            score += 0.1
+        elif "phishing" in indicator:
+            score += 0.2
     
     # AI analysis
     ai_confidence = analysis.get("ai_confidence", 0.0)

@@ -60,15 +60,16 @@ class ServerCommunicator:
     async def test_connection(self) -> bool:
         """Test connection to the server."""
         try:
-            url = f"{self.config.server_url}/health"
-            headers = self.security_manager.create_secure_headers("/health")
+            # Prefer an authenticated endpoint for smoke: email-gateway status
+            url = f"{self.config.server_url}/api/email-gateway/status"
+            headers = self.security_manager.create_secure_headers("/api/email-gateway/status", method="GET", body="")
             
             async with self.session.get(url, headers=headers) as response:
                 if response.status == 200:
                     data = await response.json()
                     logger.info("Server connection test successful", 
                                server_url=self.config.server_url,
-                               server_status=data.get('status'))
+                               details=data)
                     return True
                 else:
                     logger.error("Server connection test failed", 
@@ -84,14 +85,13 @@ class ServerCommunicator:
         """Send heartbeat to server."""
         try:
             url = f"{self.config.server_url}/api/agent/heartbeat"
-            headers = self.security_manager.create_secure_headers("/api/agent/heartbeat")
-            
             payload = {
                 'agent_id': self.config.agent_id,
                 'agent_name': self.config.agent_name,
                 'timestamp': int(time.time()),
                 'version': self.config.version,
             }
+            headers = self.security_manager.create_secure_headers("/api/agent/heartbeat", method="POST", body=json.dumps(payload))
             
             async with self.session.post(url, headers=headers, json=payload) as response:
                 if response.status == 200:
@@ -112,7 +112,7 @@ class ServerCommunicator:
         """Send status report to server."""
         try:
             url = f"{self.config.server_url}/api/agent/status"
-            headers = self.security_manager.create_secure_headers("/api/agent/status")
+            headers = self.security_manager.create_secure_headers("/api/agent/status", method="POST", body=json.dumps(status))
             
             async with self.session.post(url, headers=headers, json=status) as response:
                 if response.status == 200:
@@ -130,7 +130,7 @@ class ServerCommunicator:
         """Send email analysis to server."""
         try:
             url = f"{self.config.server_url}/api/ingest/email"
-            headers = self.security_manager.create_secure_headers("/api/ingest/email")
+            headers = self.security_manager.create_secure_headers("/api/ingest/email", method="POST", body=json.dumps(email_data))
             
             # Add agent information
             email_data['agent_id'] = self.config.agent_id
@@ -155,7 +155,7 @@ class ServerCommunicator:
         """Send file analysis to server."""
         try:
             url = f"{self.config.server_url}/api/ingest/attachment"
-            headers = self.security_manager.create_secure_headers("/api/ingest/attachment")
+            headers = self.security_manager.create_secure_headers("/api/ingest/attachment", method="POST", body=json.dumps(file_data))
             
             # Add agent information
             file_data['agent_id'] = self.config.agent_id
@@ -180,7 +180,7 @@ class ServerCommunicator:
         """Send link analysis to server."""
         try:
             url = f"{self.config.server_url}/api/click/analyze"
-            headers = self.security_manager.create_secure_headers("/api/click/analyze")
+            headers = self.security_manager.create_secure_headers("/api/click/analyze", method="POST", body=json.dumps(link_data))
             
             # Add agent information
             link_data['agent_id'] = self.config.agent_id
@@ -205,7 +205,7 @@ class ServerCommunicator:
         """Get threat intelligence from server."""
         try:
             url = f"{self.config.server_url}/api/threat/intel"
-            headers = self.security_manager.create_secure_headers("/api/threat/intel")
+            headers = self.security_manager.create_secure_headers("/api/threat/intel", method="POST", body=json.dumps(payload))
             
             payload = {
                 'indicators': indicators,
@@ -230,7 +230,7 @@ class ServerCommunicator:
         """Get updated configuration from server."""
         try:
             url = f"{self.config.server_url}/api/agent/config"
-            headers = self.security_manager.create_secure_headers("/api/agent/config")
+            headers = self.security_manager.create_secure_headers("/api/agent/config", method="GET", body="")
             
             params = {
                 'agent_id': self.config.agent_id,
@@ -253,7 +253,7 @@ class ServerCommunicator:
         """Upload file to server for analysis."""
         try:
             url = f"{self.config.server_url}/api/upload/file"
-            headers = self.security_manager.create_secure_headers("/api/upload/file")
+            headers = self.security_manager.create_secure_headers("/api/upload/file", method="POST", body="")
             
             # Remove content-type header for multipart upload
             headers.pop('Content-Type', None)
@@ -286,7 +286,7 @@ class ServerCommunicator:
         """Get rewritten URL from server."""
         try:
             url = f"{self.config.server_url}/api/click/rewrite"
-            headers = self.security_manager.create_secure_headers("/api/click/rewrite")
+            headers = self.security_manager.create_secure_headers("/api/click/rewrite", method="POST", body=json.dumps(payload))
             
             payload = {
                 'original_url': original_url,
@@ -314,7 +314,7 @@ class ServerCommunicator:
         """Report threat to server."""
         try:
             url = f"{self.config.server_url}/api/threat/report"
-            headers = self.security_manager.create_secure_headers("/api/threat/report")
+            headers = self.security_manager.create_secure_headers("/api/threat/report", method="POST", body=json.dumps(threat_data))
             
             # Add agent information
             threat_data['agent_id'] = self.config.agent_id
