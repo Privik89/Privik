@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
 import structlog
-from .virustotal import VirusTotalService
+from .virustotal import vt_lookup_file
 
 logger = structlog.get_logger()
 

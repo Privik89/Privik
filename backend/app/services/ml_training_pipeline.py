@@ -20,7 +20,7 @@ from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 from sklearn.feature_extraction.text import TfidfVectorizer
 import joblib
-from ..core.config import settings
+from ..core.config import get_settings
 from ..services.cache_manager import cache_manager
 from ..services.logging_service import logging_service
 

@@ -10,7 +10,7 @@ from ..database import get_db
 from ..security.hmac_auth import verify_request
 from ..services.health_monitor import health_monitor
 from ..services.cache_manager import cache_manager
-from ..database.optimization import db_optimizer
+from ..db_utils.optimization import db_optimizer
 from ..services.logging_service import logging_service
 from datetime import datetime, timezone
 import structlog

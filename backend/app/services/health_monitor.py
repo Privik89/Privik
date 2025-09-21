@@ -10,8 +10,8 @@ from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Any, Optional
 import structlog
 from ..services.cache_manager import cache_manager
-from ..database.optimization import db_optimizer
-from ..core.config import settings
+from ..db_utils.optimization import db_optimizer
+from ..core.config import get_settings
 
 logger = structlog.get_logger()
 

@@ -105,18 +105,18 @@ const BulkDomainManager = () => {
     }
   };
 
-  const getResultColor = (type) => {
-    switch (type) {
-      case 'success':
-        return 'text-green-600 bg-green-100';
-      case 'warning':
-        return 'text-yellow-600 bg-yellow-100';
-      case 'error':
-        return 'text-red-600 bg-red-100';
-      default:
-        return 'text-blue-600 bg-blue-100';
-    }
-  };
+  // const getResultColor = (type) => {
+  //   switch (type) {
+  //     case 'success':
+  //       return 'text-green-600 bg-green-100';
+  //     case 'warning':
+  //       return 'text-yellow-600 bg-yellow-100';
+  //     case 'error':
+  //       return 'text-red-600 bg-red-100';
+  //     default:
+  //       return 'text-blue-600 bg-blue-100';
+  //   }
+  // };
 
   return (
     <div className="bg-white rounded-lg shadow p-6">

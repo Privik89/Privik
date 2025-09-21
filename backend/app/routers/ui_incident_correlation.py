@@ -25,8 +25,8 @@ async def list_incidents(
     limit: int = Query(100, description="Maximum number of incidents to return"),
     offset: int = Query(0, description="Number of incidents to skip"),
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """List security incidents"""
     try:
@@ -81,8 +81,8 @@ async def list_incidents(
 async def get_incident_details(
     incident_id: str,
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Get details of a specific incident"""
     try:
@@ -156,8 +156,8 @@ async def get_incident_details(
 async def get_incident_timeline(
     incident_id: str,
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Get timeline for a specific incident"""
     try:
@@ -174,8 +174,8 @@ async def assign_incident(
     incident_id: str,
     assigned_to: str,
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Assign incident to a user"""
     try:
@@ -203,8 +203,8 @@ async def resolve_incident(
     resolved_by: str,
     resolution_notes: Optional[str] = None,
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Resolve an incident"""
     try:
@@ -231,8 +231,8 @@ async def resolve_incident(
 @router.get("/incidents/statistics")
 async def get_incident_statistics(
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Get incident statistics"""
     try:
@@ -248,8 +248,8 @@ async def get_incident_statistics(
 async def get_related_incidents(
     incident_id: str,
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Get incidents related to a specific incident"""
     try:

@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional, Union
 import structlog
 from pathlib import Path
 import aiofiles
-from ..core.config import settings
+from ..core.config import get_settings
 
 logger = structlog.get_logger()
 
@@ -61,7 +61,7 @@ class LoggingService:
     """Centralized logging and audit service"""
     
     def __init__(self):
-        self.log_directory = Path(getattr(settings, 'LOG_DIRECTORY', 'logs'))
+        self.log_directory = Path(getattr(get_settings(), 'LOG_DIRECTORY', 'logs'))
         self.audit_directory = self.log_directory / "audit"
         self.application_directory = self.log_directory / "application"
         self.error_directory = self.log_directory / "error"

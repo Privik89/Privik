@@ -21,8 +21,8 @@ async def list_domains(
     list_type: Optional[str] = Query(None, description="Filter by list type: whitelist or blacklist"),
     active_only: bool = Query(True, description="Show only active domains"),
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    ___: dict = Depends(verify_jwt_token)
 ):
     """List domains in whitelist/blacklist"""
     query = db.query(DomainList)
@@ -57,8 +57,8 @@ async def add_domain(
     reason: Optional[str] = None,
     created_by: Optional[str] = None,
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    ___: dict = Depends(verify_jwt_token)
 ):
     """Add domain to whitelist or blacklist"""
     if list_type not in ['whitelist', 'blacklist']:
@@ -102,8 +102,8 @@ async def add_domain(
 async def remove_domain(
     domain_id: int,
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    ___: dict = Depends(verify_jwt_token)
 ):
     """Remove domain from list (soft delete)"""
     domain = db.query(DomainList).filter(DomainList.id == domain_id).first()
@@ -122,8 +122,8 @@ async def remove_domain(
 async def check_domain(
     domain: str,
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    ___: dict = Depends(verify_jwt_token)
 ):
     """Check if domain is in whitelist or blacklist"""
     domain_entry = db.query(DomainList).filter(

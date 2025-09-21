@@ -13,7 +13,7 @@ from pathlib import Path
 import structlog
 import aiohttp
 import aiofiles
-from ..core.config import settings
+from ..core.config import get_settings
 from ..services.cache_manager import cache_manager
 from ..services.logging_service import logging_service
 
@@ -167,7 +167,7 @@ class AdvancedSandbox:
                 session_data['url_hash'] = url_hash
             
             # Submit to CAPE or other sandbox
-            if settings.cape_enabled:
+            if get_settings().cape_enabled:
                 cape_result = await self._submit_to_cape(session_data)
                 if cape_result.get('success'):
                     session_data['cape_task_id'] = cape_result['task_id']

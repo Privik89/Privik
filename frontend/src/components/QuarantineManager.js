@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 const QuarantineManager = () => {
   const [emails, setEmails] = useState([]);
@@ -21,9 +21,9 @@ const QuarantineManager = () => {
   useEffect(() => {
     fetchEmails();
     fetchStatistics();
-  }, [filters, pagination.offset]);
+  }, [filters, pagination.offset, fetchEmails]);
 
-  const fetchEmails = async () => {
+  const fetchEmails = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -43,7 +43,7 @@ const QuarantineManager = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, pagination.offset, pagination.limit]);
 
   const fetchStatistics = async () => {
     try {

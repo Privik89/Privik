@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from typing import Any, Optional, Dict, List, Union
 import structlog
 import redis.asyncio as redis
-from ..core.config import settings
+from ..core.config import get_settings
 
 logger = structlog.get_logger()
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 const PerformanceMonitor = () => {
   const [performanceData, setPerformanceData] = useState(null);
@@ -18,9 +18,9 @@ const PerformanceMonitor = () => {
       const interval = setInterval(fetchAllData, 30000); // Refresh every 30 seconds
       return () => clearInterval(interval);
     }
-  }, [autoRefresh]);
+  }, [autoRefresh, fetchAllData]);
 
-  const fetchAllData = async () => {
+  const fetchAllData = useCallback(async () => {
     try {
       setLoading(true);
       await Promise.all([
@@ -34,7 +34,7 @@ const PerformanceMonitor = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const fetchPerformanceStatus = async () => {
     try {
@@ -134,13 +134,13 @@ const PerformanceMonitor = () => {
     }
   };
 
-  const formatBytes = (bytes) => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
+  // const formatBytes = (bytes) => {
+  //   if (bytes === 0) return '0 B';
+  //   const k = 1024;
+  //   const sizes = ['B', 'KB', 'MB', 'GB'];
+  //   const i = Math.floor(Math.log(bytes) / Math.log(k));
+  //   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  // };
 
   if (loading && !performanceData) {
     return <div className="p-4">Loading performance data...</div>;

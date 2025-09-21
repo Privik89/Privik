@@ -20,8 +20,8 @@ async def get_domain_score(
     domain: str,
     force_refresh: bool = Query(False, description="Force refresh from threat intelligence sources"),
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    ___: dict = Depends(verify_jwt_token)
 ):
     """Get domain reputation score"""
     try:
@@ -59,8 +59,8 @@ async def get_domain_score(
 async def bulk_score_domains(
     domains: List[str],
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    ___: dict = Depends(verify_jwt_token)
 ):
     """Score multiple domains in parallel"""
     try:
@@ -95,8 +95,8 @@ async def get_domain_history(
     domain: str,
     days: int = Query(7, description="Number of days of history to retrieve"),
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    ___: dict = Depends(verify_jwt_token)
 ):
     """Get historical domain scores"""
     try:
@@ -126,8 +126,8 @@ async def get_domain_history(
 async def refresh_domain_score(
     domain: str,
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    ___: dict = Depends(verify_jwt_token)
 ):
     """Force refresh domain score from threat intelligence sources"""
     try:

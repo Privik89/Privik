@@ -24,8 +24,8 @@ async def list_quarantined_emails(
     limit: int = Query(100, description="Maximum number of emails to return"),
     offset: int = Query(0, description="Number of emails to skip"),
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """List quarantined emails"""
     try:
@@ -78,8 +78,8 @@ async def list_quarantined_emails(
 async def get_quarantined_email(
     quarantine_id: int,
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Get details of a quarantined email"""
     try:
@@ -135,8 +135,8 @@ async def release_quarantined_email(
     released_by: str,
     release_reason: Optional[str] = None,
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Release an email from quarantine"""
     try:
@@ -162,8 +162,8 @@ async def delete_quarantined_email(
     deleted_by: str,
     delete_reason: Optional[str] = None,
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Delete a quarantined email"""
     try:
@@ -189,8 +189,8 @@ async def whitelist_sender(
     whitelisted_by: str,
     whitelist_reason: Optional[str] = None,
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Whitelist sender and release email"""
     try:
@@ -216,8 +216,8 @@ async def blacklist_sender(
     blacklisted_by: str,
     blacklist_reason: Optional[str] = None,
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Blacklist sender and delete email"""
     try:
@@ -244,8 +244,8 @@ async def bulk_quarantine_action(
     performed_by: str,
     action_reason: Optional[str] = None,
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Perform bulk action on quarantined emails"""
     try:
@@ -272,8 +272,8 @@ async def bulk_quarantine_action(
 @router.get("/quarantine/statistics")
 async def get_quarantine_statistics(
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Get quarantine statistics"""
     try:

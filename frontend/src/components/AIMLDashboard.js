@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 const AIMLDashboard = () => {
   const [aiStatus, setAiStatus] = useState(null);
@@ -11,9 +11,9 @@ const AIMLDashboard = () => {
 
   useEffect(() => {
     fetchAllData();
-  }, []);
+  }, [fetchAllData]);
 
-  const fetchAllData = async () => {
+  const fetchAllData = useCallback(async () => {
     try {
       setLoading(true);
       await Promise.all([
@@ -27,7 +27,7 @@ const AIMLDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const fetchAIStatus = async () => {
     try {

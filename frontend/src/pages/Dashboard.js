@@ -1,164 +1,90 @@
 import React from 'react';
-import { useQuery } from 'react-query';
-import {
-  EnvelopeIcon,
-  ExclamationTriangleIcon,
-  UsersIcon,
-  ShieldCheckIcon,
-} from '@heroicons/react/24/outline';
-import StatCard from '../components/StatCard';
-import AlertCard from '../components/AlertCard';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-
-// Mock data - replace with actual API calls
-const mockDashboardData = {
-  summary: {
-    totalEmails: 1247,
-    threatsDetected: 23,
-    activeUsers: 156,
-    protectionRate: 98.2,
-  },
-  hourlyStats: [
-    { hour: '00:00', emails: 45, threats: 2 },
-    { hour: '04:00', emails: 32, threats: 1 },
-    { hour: '08:00', emails: 89, threats: 4 },
-    { hour: '12:00', emails: 156, threats: 7 },
-    { hour: '16:00', emails: 134, threats: 5 },
-    { hour: '20:00', emails: 78, threats: 3 },
-  ],
-  recentAlerts: [
-    {
-      id: 1,
-      title: 'Suspicious Link Detected',
-      description: 'User clicked on potentially malicious link from unknown sender',
-      severity: 'high',
-      timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-    },
-    {
-      id: 2,
-      title: 'File Attachment Analysis Complete',
-      description: 'PDF file flagged for suspicious behavior patterns',
-      severity: 'medium',
-      timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-    },
-    {
-      id: 3,
-      title: 'User Risk Score Increased',
-      description: 'User john.doe@company.com risk score increased by 15%',
-      severity: 'low',
-      timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-    },
-  ],
-};
+import { ShieldCheckIcon, ExclamationTriangleIcon, ChartBarIcon, UsersIcon } from '@heroicons/react/24/outline';
 
 function Dashboard() {
-  // In a real app, you would use actual API calls here
-  const { data: dashboardData, isLoading, error } = useQuery(
-    'dashboard',
-    () => Promise.resolve(mockDashboardData),
-    { refetchInterval: 30000 } // Refresh every 30 seconds
-  );
+  const stats = [
+    { name: 'Emails Scanned', value: '1,234', change: '+12%', changeType: 'positive' },
+    { name: 'Threats Detected', value: '23', change: '+5%', changeType: 'positive' },
+    { name: 'Quarantined', value: '8', change: '-2%', changeType: 'negative' },
+    { name: 'Active Users', value: '156', change: '+3%', changeType: 'positive' },
+  ];
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-privik-blue-600"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-red-600">Error loading dashboard data</p>
-      </div>
-    );
-  }
+  const recentActivity = [
+    { id: 1, type: 'threat', message: 'Phishing attempt blocked', time: '2 minutes ago' },
+    { id: 2, type: 'quarantine', message: 'Suspicious email quarantined', time: '5 minutes ago' },
+    { id: 3, type: 'scan', message: 'Bulk email scan completed', time: '10 minutes ago' },
+    { id: 4, type: 'user', message: 'New user login detected', time: '15 minutes ago' },
+  ];
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Security Operations Dashboard</h1>
-        <p className="text-gray-600">Real-time overview of email security threats and user activity</p>
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <h1 className="text-2xl font-bold text-gray-900">Email Security Dashboard</h1>
+        <p className="text-gray-600 mt-2">Monitor and manage your email security in real-time</p>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title="Total Emails"
-          value={dashboardData.summary.totalEmails.toLocaleString()}
-          change="+12%"
-          changeType="positive"
-          icon={EnvelopeIcon}
-        />
-        <StatCard
-          title="Threats Detected"
-          value={dashboardData.summary.threatsDetected}
-          change="+3"
-          changeType="negative"
-          icon={ExclamationTriangleIcon}
-        />
-        <StatCard
-          title="Active Users"
-          value={dashboardData.summary.activeUsers}
-          change="+5"
-          changeType="positive"
-          icon={UsersIcon}
-        />
-        <StatCard
-          title="Protection Rate"
-          value={`${dashboardData.summary.protectionRate}%`}
-          change="+0.5%"
-          changeType="positive"
-          icon={ShieldCheckIcon}
-        />
+        {stats.map((stat, index) => (
+          <div key={index} className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">{stat.name}</p>
+                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+              </div>
+              <div className={`text-sm font-medium ${
+                stat.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {stat.change}
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Email Activity Chart */}
-        <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Email Activity (24h)</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={dashboardData.hourlyStats}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="hour" />
-              <YAxis />
-              <Tooltip />
-              <Line type="monotone" dataKey="emails" stroke="#3b82f6" strokeWidth={2} />
-              <Line type="monotone" dataKey="threats" stroke="#ef4444" strokeWidth={2} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Threat Distribution */}
-        <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Threat Distribution</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={dashboardData.hourlyStats}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="hour" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="threats" fill="#ef4444" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Recent Alerts */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Recent Alerts</h3>
-          <button className="text-sm text-privik-blue-600 hover:text-privik-blue-700">
-            View All
-          </button>
-        </div>
-        <div className="space-y-4">
-          {dashboardData.recentAlerts.map((alert) => (
-            <AlertCard key={alert.id} alert={alert} />
+      {/* Recent Activity */}
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h2>
+        <div className="space-y-3">
+          {recentActivity.map((activity) => (
+            <div key={activity.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+              <div className="flex-shrink-0">
+                {activity.type === 'threat' && (
+                  <ExclamationTriangleIcon className="h-5 w-5 text-red-500" />
+                )}
+                {activity.type === 'quarantine' && (
+                  <ShieldCheckIcon className="h-5 w-5 text-yellow-500" />
+                )}
+                {activity.type === 'scan' && (
+                  <ChartBarIcon className="h-5 w-5 text-blue-500" />
+                )}
+                {activity.type === 'user' && (
+                  <UsersIcon className="h-5 w-5 text-green-500" />
+                )}
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-900">{activity.message}</p>
+                <p className="text-xs text-gray-500">{activity.time}</p>
+              </div>
+            </div>
           ))}
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <button className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+            Scan New Emails
+          </button>
+          <button className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+            View Quarantine
+          </button>
+          <button className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+            Generate Report
+          </button>
         </div>
       </div>
     </div>

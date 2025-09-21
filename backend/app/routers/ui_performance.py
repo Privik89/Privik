@@ -11,7 +11,7 @@ from ..security.jwt_auth import verify_jwt_token
 from ..security.ui_guard import ui_guard
 from ..services.health_monitor import health_monitor
 from ..services.cache_manager import cache_manager
-from ..database.optimization import db_optimizer
+from ..db_utils.optimization import db_optimizer
 from ..services.logging_service import logging_service
 from datetime import datetime, timezone, timedelta
 import structlog
@@ -21,8 +21,8 @@ router = APIRouter()
 
 @router.get("/health")
 async def health_check(
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Get system health status"""
     try:
@@ -35,8 +35,8 @@ async def health_check(
 
 @router.get("/health/summary")
 async def health_summary(
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Get current health summary"""
     try:
@@ -50,8 +50,8 @@ async def health_summary(
 @router.get("/health/trends")
 async def health_trends(
     hours: int = Query(24, description="Number of hours to analyze"),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Get health trends over time"""
     try:
@@ -64,8 +64,8 @@ async def health_trends(
 
 @router.get("/performance/cache")
 async def cache_performance(
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Get cache performance metrics"""
     try:
@@ -78,8 +78,8 @@ async def cache_performance(
 
 @router.get("/performance/database")
 async def database_performance(
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Get database performance metrics"""
     try:
@@ -92,8 +92,8 @@ async def database_performance(
 
 @router.get("/performance/logs")
 async def logging_performance(
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Get logging system metrics"""
     try:
@@ -111,8 +111,8 @@ async def get_audit_logs(
     event_type: Optional[str] = Query(None, description="Filter by event type"),
     user_id: Optional[str] = Query(None, description="Filter by user ID"),
     limit: int = Query(1000, description="Maximum number of logs to return"),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Get audit logs with filtering"""
     try:
@@ -142,8 +142,8 @@ async def get_audit_logs(
 @router.post("/performance/cache/flush")
 async def flush_cache(
     namespace: Optional[str] = Query(None, description="Namespace to flush"),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Flush cache or specific namespace"""
     try:
@@ -175,8 +175,8 @@ async def flush_cache(
 
 @router.post("/performance/database/optimize")
 async def optimize_database(
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Optimize database performance"""
     try:
@@ -197,8 +197,8 @@ async def optimize_database(
 
 @router.get("/performance/system")
 async def system_performance(
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Get overall system performance metrics"""
     try:
@@ -246,8 +246,8 @@ async def system_performance(
 
 @router.get("/performance/status")
 async def performance_status(
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Get comprehensive performance status"""
     try:

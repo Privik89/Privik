@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 const IncidentCorrelation = () => {
   const [incidents, setIncidents] = useState([]);
@@ -21,9 +21,9 @@ const IncidentCorrelation = () => {
   useEffect(() => {
     fetchIncidents();
     fetchStatistics();
-  }, [filters, pagination.offset]);
+  }, [filters, pagination.offset, fetchIncidents]);
 
-  const fetchIncidents = async () => {
+  const fetchIncidents = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -44,7 +44,7 @@ const IncidentCorrelation = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, pagination.offset, pagination.limit]);
 
   const fetchStatistics = async () => {
     try {

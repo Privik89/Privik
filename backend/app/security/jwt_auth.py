@@ -28,3 +28,22 @@ async def verify_jwt_admin(request: Request):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
 
+async def verify_jwt_token(request: Request):
+    """General JWT token verification for any authenticated user"""
+    settings = get_settings()
+    if not settings.enable_jwt_auth:
+        # Allow if disabled
+        return True
+    auth = request.headers.get('Authorization', '')
+    if not auth.startswith('Bearer '):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing token")
+    token = auth.split(' ', 1)[1]
+    try:
+        payload = jwt.decode(token, settings.jwt_secret, algorithms=['HS256'])
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired")
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
+

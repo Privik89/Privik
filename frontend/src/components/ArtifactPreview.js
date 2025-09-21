@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 const ArtifactPreview = ({ artifactKey, artifactType }) => {
   const [content, setContent] = useState(null);
@@ -10,9 +10,9 @@ const ArtifactPreview = ({ artifactKey, artifactType }) => {
     if (artifactKey) {
       fetchArtifact();
     }
-  }, [artifactKey]);
+  }, [artifactKey, fetchArtifact]);
 
-  const fetchArtifact = async () => {
+  const fetchArtifact = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/ui/artifacts/get?key=${encodeURIComponent(artifactKey)}`);
@@ -30,7 +30,7 @@ const ArtifactPreview = ({ artifactKey, artifactType }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [artifactKey, artifactType]);
 
   const getArtifactIcon = () => {
     switch (artifactType) {

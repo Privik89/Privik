@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import asyncio
 import structlog
 
 from .core.config import get_settings
@@ -57,7 +58,6 @@ async def startup_event():
         # Start CAPE poller if enabled
         settings_local = get_settings()
         if settings_local.cape_enabled:
-            import asyncio
             asyncio.create_task(
                 run_cape_poller(
                     settings_local.cape_base_url,
@@ -66,9 +66,9 @@ async def startup_event():
                 )
             )
         
-        # Start threat feed manager
-        threat_manager = ThreatFeedManager()
-        asyncio.create_task(threat_manager.start_feed_monitoring())
+        # Start threat feed manager (temporarily disabled for initial setup)
+        # threat_manager = ThreatFeedManager()
+        # asyncio.create_task(threat_manager.start_feed_monitoring())
     except Exception as e:
         logger.error("Failed to create database tables", error=str(e))
         raise

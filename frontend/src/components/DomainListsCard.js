@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 const DomainListsCard = () => {
   const [domains, setDomains] = useState([]);
@@ -12,9 +12,9 @@ const DomainListsCard = () => {
 
   useEffect(() => {
     fetchDomains();
-  }, [filterType]);
+  }, [filterType, fetchDomains]);
 
-  const fetchDomains = async () => {
+  const fetchDomains = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -32,7 +32,7 @@ const DomainListsCard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterType]);
 
   const addDomain = async (e) => {
     e.preventDefault();

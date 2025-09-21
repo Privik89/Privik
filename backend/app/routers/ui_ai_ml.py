@@ -23,8 +23,8 @@ router = APIRouter()
 async def train_ml_models(
     days_back: int = Query(30, description="Number of days to collect training data"),
     background_tasks: BackgroundTasks = None,
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Train ML models with collected data"""
     try:
@@ -45,8 +45,8 @@ async def train_ml_models(
 
 @router.get("/ml/models/status")
 async def get_ml_models_status(
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Get status of ML models"""
     try:
@@ -74,8 +74,8 @@ async def get_ml_models_status(
 @router.post("/ml/predict/email")
 async def predict_email_threat(
     email_features: Dict[str, Any],
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Predict email threat level using trained model"""
     try:
@@ -91,8 +91,8 @@ async def predict_email_threat(
 
 @router.get("/behavior/anomalies")
 async def detect_behavioral_anomalies(
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Detect behavioral anomalies across all users"""
     try:
@@ -106,8 +106,8 @@ async def detect_behavioral_anomalies(
 @router.get("/behavior/user/{user_id}/risk")
 async def get_user_risk_prediction(
     user_id: str,
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Get risk prediction for specific user"""
     try:
@@ -120,8 +120,8 @@ async def get_user_risk_prediction(
 
 @router.get("/behavior/insights")
 async def get_behavioral_insights(
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Get overall behavioral insights"""
     try:
@@ -134,8 +134,8 @@ async def get_behavioral_insights(
 
 @router.get("/behavior/clusters")
 async def analyze_user_clusters(
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Analyze user behavior clusters"""
     try:
@@ -152,8 +152,8 @@ async def run_threat_hunting_campaign(
     rules: Optional[List[str]] = Query(None, description="Specific rules to execute"),
     time_range: int = Query(7, description="Time range in days"),
     background_tasks: BackgroundTasks = None,
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Run threat hunting campaign"""
     try:
@@ -184,8 +184,8 @@ async def run_threat_hunting_campaign(
 @router.get("/threat-hunting/campaigns")
 async def get_threat_hunting_campaigns(
     limit: int = Query(10, description="Maximum number of campaigns to return"),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Get recent threat hunting campaigns"""
     try:
@@ -198,8 +198,8 @@ async def get_threat_hunting_campaigns(
 
 @router.get("/threat-hunting/rules")
 async def get_threat_hunting_rules(
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Get available threat hunting rules"""
     try:
@@ -225,8 +225,8 @@ async def advanced_sandbox_analysis(
     file_path: Optional[str] = None,
     url: Optional[str] = None,
     analysis_type: str = "comprehensive",
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Perform advanced sandbox analysis with evasion detection"""
     try:
@@ -247,8 +247,8 @@ async def advanced_sandbox_analysis(
 
 @router.get("/ai/status")
 async def get_ai_ml_status(
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Get overall AI/ML system status"""
     try:

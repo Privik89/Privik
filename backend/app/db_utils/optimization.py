@@ -7,7 +7,7 @@ from sqlalchemy import Index, text, create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import QueuePool
 import structlog
-from ..core.config import settings
+from ..core.config import get_settings
 
 logger = structlog.get_logger()
 
@@ -34,7 +34,7 @@ class DatabaseOptimizer:
             
             # Create optimized engine
             self.engine = create_engine(
-                settings.DATABASE_URL,
+                get_settings().DATABASE_URL,
                 **pool_config
             )
             

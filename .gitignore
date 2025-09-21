@@ -1,3 +1,5 @@
+# Privik Email Security Platform - Git Ignore File
+
 # Python
 __pycache__/
 *.py[cod]
@@ -23,11 +25,12 @@ share/python-wheels/
 MANIFEST
 
 # Virtual environments
-.venv/
+.env
+.venv
+env/
 venv/
 ENV/
-env/
-.venv.bak/
+env.bak/
 venv.bak/
 
 # PyCharm
@@ -39,25 +42,27 @@ venv.bak/
 # Jupyter Notebook
 .ipynb_checkpoints
 
-# Environment variables
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# poetry
+poetry.lock
+
+# celery beat schedule file
+celerybeat-schedule
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
-
-# Logs
-*.log
-logs/
-backend.log
-frontend.log
-
-# Database
-*.db
-*.sqlite
-*.sqlite3
-privik.db
-backend/privik.db
 
 # Node.js
 node_modules/
@@ -65,14 +70,13 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
+.pnpm-debug.log*
 
-# React
-build/
-.DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
 
 # Coverage directory used by tools like istanbul
 coverage/
@@ -81,14 +85,36 @@ coverage/
 # nyc test coverage
 .nyc_output
 
+# Grunt intermediate storage
+.grunt
+
+# Bower dependency directory
+bower_components
+
+# node-waf configuration
+.lock-wscript
+
+# Compiled binary addons
+build/Release
+
 # Dependency directories
+node_modules/
 jspm_packages/
+
+# Snowpack dependency directory
+web_modules/
+
+# TypeScript cache
+*.tsbuildinfo
 
 # Optional npm cache directory
 .npm
 
 # Optional eslint cache
 .eslintcache
+
+# Optional stylelint cache
+.stylelintcache
 
 # Microbundle cache
 .rpt2_cache/
@@ -105,7 +131,7 @@ jspm_packages/
 # Yarn Integrity file
 .yarn-integrity
 
-# parcel-bundler cache (https://parceljs.org/)
+# parcel-bundler cache
 .cache
 .parcel-cache
 
@@ -123,10 +149,20 @@ public
 # Storybook build outputs
 .out
 .storybook-out
+storybook-static
 
 # Temporary folders
 tmp/
 temp/
+
+# Logs
+logs
+*.log
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
 
 # OS generated files
 .DS_Store
@@ -137,44 +173,29 @@ temp/
 ehthumbs.db
 Thumbs.db
 
-# IDE files
-*.swp
-*.swo
-*~
-
 # Docker
 .dockerignore
 
-# Kubernetes
-*.kubeconfig
+# Redis dump file
+dump.rdb
 
-# Terraform
-*.tfstate
-*.tfstate.*
-.terraform/
+# Elasticsearch
+elasticsearch/
 
-# Backup files
-*.bak
-*.backup
-*.old
+# Kibana
+kibana/
 
-# Test files (keeping comprehensive test suite)
-*_test.py
-tests/
+# Logstash
+logstash/
 
-# Documentation builds
-docs/_build/
+# Prometheus
+prometheus/
 
-# Model files (large ML models)
-*.pkl
-*.joblib
-*.h5
-*.model
-ml_models/
+# Grafana
+grafana/
 
-# Agent configuration (contains sensitive data)
-agent_config.json
-agent/agent_config.json
+# MinIO
+minio/
 
 # SSL certificates
 *.pem
@@ -182,7 +203,221 @@ agent/agent_config.json
 *.crt
 *.csr
 
-# API keys and secrets
-secrets/
-keys/
-*.key
+# Backup files
+*.bak
+*.backup
+*.old
+
+# IDE files
+*.swp
+*.swo
+*~
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Application specific
+uploads/
+static/uploads/
+media/
+
+# Configuration files with secrets
+config/secrets.yml
+config/database.yml
+.env.production
+.env.staging
+
+# Test coverage
+coverage/
+.coverage
+htmlcov/
+
+# Pytest
+.pytest_cache/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# React build
+frontend/build/
+frontend/dist/
+
+# React environment files
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# Storybook
+frontend/storybook-static/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Archive files
+*.zip
+*.tar.gz
+*.rar
+
+# Local development files
+local/
+dev/
+development/
+
+# Production files
+production/
+prod/
+
+# Documentation build
+docs/_build/
+docs/build/
+
+# Sphinx documentation
+docs/_build/
+
+# MkDocs documentation
+site/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# Local configuration
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# PEP 582
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# Privik specific
+privik.log
+privik_error.log
+sandbox_results/
+quarantine/
+uploads/
+downloads/
+temp_files/
+
+# Model files (too large for git)
+*.pkl
+*.joblib
+*.h5
+*.model
+
+# Data files
+*.csv
+*.json
+*.xml
+*.xlsx
+*.xls
+
+# Large files
+*.zip
+*.tar.gz
+*.rar
+*.7z

@@ -23,8 +23,8 @@ async def import_domains_csv(
     validate_domains: bool = Form(True),
     score_domains: bool = Form(True),
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Import domains from CSV file"""
     try:
@@ -66,8 +66,8 @@ async def import_domains_json(
     validate_domains: bool = Form(True),
     score_domains: bool = Form(True),
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Import domains from JSON file"""
     try:
@@ -106,8 +106,8 @@ async def export_domains_csv(
     list_type: Optional[str] = Query(None, description="Filter by list type"),
     active_only: bool = Query(True, description="Export only active domains"),
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Export domains to CSV format"""
     try:
@@ -134,8 +134,8 @@ async def export_domains_json(
     active_only: bool = Query(True, description="Export only active domains"),
     include_metadata: bool = Query(True, description="Include export metadata"),
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Export domains to JSON format"""
     try:
@@ -161,8 +161,8 @@ async def export_domains_json(
 async def bulk_update_domains(
     updates: List[dict],
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Bulk update domain properties"""
     try:
@@ -186,8 +186,8 @@ async def bulk_delete_domains(
     domain_identifiers: List[str],
     soft_delete: bool = Query(True, description="Soft delete (mark inactive) or hard delete"),
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Bulk delete domains"""
     try:

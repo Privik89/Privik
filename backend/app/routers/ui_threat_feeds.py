@@ -20,8 +20,8 @@ router = APIRouter()
 async def list_threat_feeds(
     active_only: bool = Query(True, description="Show only active feeds"),
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """List all threat feeds"""
     try:
@@ -67,8 +67,8 @@ async def create_threat_feed(
     update_interval: int = 3600,
     confidence_threshold: float = 0.7,
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Create a new threat feed"""
     try:
@@ -110,8 +110,8 @@ async def create_threat_feed(
 async def delete_threat_feed(
     feed_id: int,
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Delete a threat feed"""
     try:
@@ -127,8 +127,8 @@ async def delete_threat_feed(
 @router.get("/feeds/status")
 async def get_feed_status(
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Get overall threat feed status"""
     try:
@@ -144,8 +144,8 @@ async def get_feed_status(
 async def manual_feed_update(
     feed_id: int,
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Manually trigger feed update"""
     try:
@@ -168,8 +168,8 @@ async def get_feed_records(
     indicator_type: Optional[str] = Query(None, description="Filter by indicator type"),
     limit: int = Query(100, description="Maximum number of records"),
     db: Session = Depends(get_db),
-    request: Request = Depends(ui_guard),
-    _: dict = Depends(verify_jwt_token)
+    _: bool = Depends(ui_guard),
+    __: dict = Depends(verify_jwt_token)
 ):
     """Get records from a specific threat feed"""
     try:
